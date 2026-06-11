@@ -18,10 +18,26 @@ export default function SpectatorPage() {
   const [lastMatchResult, setLastMatchResult] = useState<any>(null);
   const [showTakeover, setShowTakeover] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [scale, setScale] = useState(1);
   const supabase = createClient();
 
   useEffect(() => {
+    const handleResize = () => {
+      const targetWidth = 1920;
+      const targetHeight = 1080;
+      const scaleW = window.innerWidth / targetWidth;
+      const scaleH = window.innerHeight / targetHeight;
+      setScale(Math.min(scaleW, scaleH));
+    };
+
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  useEffect(() => {
     if (!tournamentId) return;
+    // ... (rest of data fetching logic)
 
     fetchInitialData();
 
@@ -147,88 +163,99 @@ export default function SpectatorPage() {
   if (!tournament) return <div className="min-h-screen bg-black flex items-center justify-center text-white font-sans uppercase tracking-widest">Loading Spectator Display...</div>;
 
   return (
-    <div className="fixed inset-0 bg-black text-white font-sans overflow-hidden flex flex-col">
-      {/* Header */}
-      <header className="h-28 bg-black flex items-center justify-between px-10 border-b border-white/10 shrink-0">
-        <div className="flex items-center gap-10">
-          <h1 className="text-6xl font-black tracking-tighter uppercase italic">
-            RANKINGS
-          </h1>
-          <div className="h-16 w-1 bg-white/20" />
-          <div className="flex flex-col justify-center">
-            <span className="text-4xl font-black text-white uppercase italic tracking-tighter leading-none">
-              {tournament.name}
-            </span>
+    <div className="fixed inset-0 bg-black flex items-center justify-center overflow-hidden">
+      <div 
+        style={{ 
+          width: '1920px', 
+          height: '1080px', 
+          transform: `scale(${scale})`,
+          transformOrigin: 'center center',
+          flexShrink: 0
+        }}
+        className="bg-black text-white font-sans overflow-hidden flex flex-col shadow-2xl"
+      >
+        {/* Header */}
+        <header className="h-[112px] bg-black flex items-center justify-between px-10 border-b border-white/10 shrink-0">
+          <div className="flex items-center gap-10">
+            <h1 className="text-5xl font-black tracking-tighter uppercase italic">
+              RANKINGS
+            </h1>
+            <div className="h-14 w-1 bg-white/20" />
+            <div className="flex flex-col justify-center">
+              <span className="text-3xl font-black text-white uppercase italic tracking-tighter leading-none">
+                {tournament.name}
+              </span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-6">
+            <button 
+              onClick={toggleFullscreen}
+              className="flex items-center gap-3 bg-white/10 hover:bg-white/20 px-6 py-3 rounded-xl transition-all border border-white/10 group"
+            >
+              {isFullscreen ? (
+                <>
+                  <Minimize2 className="w-6 h-6 text-white group-hover:scale-110 transition-transform" />
+                  <span className="text-xl font-black uppercase italic tracking-tighter">Exit Fullscreen</span>
+                </>
+              ) : (
+                <>
+                  <Maximize2 className="w-6 h-6 text-white group-hover:scale-110 transition-transform" />
+                  <span className="text-xl font-black uppercase italic tracking-tighter">Enter Fullscreen</span>
+                </>
+              )}
+            </button>
+            
+            <button 
+              onClick={() => router.push('/')}
+              className="p-3 bg-white/10 hover:bg-white/20 rounded-xl transition-all border border-white/10 group"
+              title="Close Dashboard"
+            >
+              <X className="w-6 h-6 text-white group-hover:rotate-90 transition-transform" />
+            </button>
+          </div>
+        </header>
+
+        <div className="flex-1 flex w-full overflow-hidden">
+          {/* Left Panel: Rankings (1260px) */}
+          <div className="w-[1260px] h-full flex flex-col relative shrink-0">
+            <div className="flex-1 overflow-hidden relative z-10">
+              <RankingsTable rankings={rankings} />
+            </div>
+          </div>
+
+          {/* Right Panel: Matches (660px) */}
+          <div className="w-[660px] h-full flex flex-col border-l border-white/10 shrink-0">
+            <MatchSchedule matches={matches} teams={teams} />
           </div>
         </div>
 
-        <div className="flex items-center gap-6">
-          <button 
-            onClick={toggleFullscreen}
-            className="flex items-center gap-3 bg-white/10 hover:bg-white/20 px-6 py-3 rounded-xl transition-all border border-white/10 group"
-          >
-            {isFullscreen ? (
-              <>
-                <Minimize2 className="w-6 h-6 text-white group-hover:scale-110 transition-transform" />
-                <span className="text-xl font-black uppercase italic tracking-tighter">Exit Fullscreen</span>
-              </>
-            ) : (
-              <>
-                <Maximize2 className="w-6 h-6 text-white group-hover:scale-110 transition-transform" />
-                <span className="text-xl font-black uppercase italic tracking-tighter">Enter Fullscreen</span>
-              </>
-            )}
-          </button>
-          
-          <button 
-            onClick={() => router.push('/')}
-            className="p-3 bg-white/10 hover:bg-white/20 rounded-xl transition-all border border-white/10 group"
-            title="Close Dashboard"
-          >
-            <X className="w-6 h-6 text-white group-hover:rotate-90 transition-transform" />
-          </button>
-        </div>
-      </header>
-
-      <div className="flex-1 flex w-full overflow-hidden">
-        {/* Left Panel: Rankings (66% width) */}
-        <div className="w-[66%] h-full flex flex-col relative">
-          <div className="flex-1 overflow-hidden relative z-10">
-            <RankingsTable rankings={rankings} />
+        {/* Footer */}
+        <footer className="h-[48px] bg-zinc-900 flex items-center justify-between px-6 shrink-0">
+          <div className="flex-1 max-w-xl bg-zinc-800 h-2 rounded-full overflow-hidden">
+            <div className="h-full bg-cyan-500 w-[45%]" />
           </div>
-        </div>
+          <div className="flex items-center gap-8 ml-8">
+            <div className="flex items-center gap-4">
+              <div className="w-4 h-4 bg-zinc-700 rounded-sm" />
+              <div className="w-4 h-4 bg-zinc-700 rounded-sm" />
+              <div className="w-4 h-4 bg-zinc-700 rounded-sm" />
+            </div>
+            <div className="text-xl font-bold font-mono">
+              {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </div>
+          </div>
+        </footer>
 
-        {/* Right Panel: Matches (34% width) */}
-        <div className="w-[34%] h-full flex flex-col border-l border-white/10">
-          <MatchSchedule matches={matches} teams={teams} />
-        </div>
+        {/* Match Result Takeover Overlay */}
+        {showTakeover && lastMatchResult && (
+          <MatchResultTakeover 
+            match={lastMatchResult} 
+            teams={teams} 
+            onClose={() => setShowTakeover(false)} 
+          />
+        )}
       </div>
-
-      {/* Footer */}
-      <footer className="h-12 bg-zinc-900 flex items-center justify-between px-6 shrink-0">
-        <div className="flex-1 max-w-xl bg-zinc-800 h-2 rounded-full overflow-hidden">
-          <div className="h-full bg-cyan-500 w-[45%]" />
-        </div>
-        <div className="flex items-center gap-8 ml-8">
-          <div className="flex items-center gap-4">
-            <div className="w-4 h-4 bg-zinc-700 rounded-sm" />
-            <div className="w-4 h-4 bg-zinc-700 rounded-sm" />
-            <div className="w-4 h-4 bg-zinc-700 rounded-sm" />
-          </div>
-          <div className="text-xl font-bold font-mono">
-            {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-          </div>
-        </div>
-      </footer>
-
-      {/* Match Result Takeover Overlay */}
-      {showTakeover && lastMatchResult && (
-        <MatchResultTakeover 
-          match={lastMatchResult} 
-          teams={teams} 
-          onClose={() => setShowTakeover(false)} 
-        />
-      )}
     </div>
   );
 }
