@@ -175,14 +175,14 @@ export default function SpectatorPage() {
         className="bg-black text-white font-sans overflow-hidden flex flex-col shadow-2xl"
       >
         {/* Header */}
-        <header className="h-[112px] bg-black flex items-center justify-between px-10 border-b border-white/10 shrink-0">
-          <div className="flex items-center gap-10">
-            <h1 className="text-5xl font-black tracking-tighter uppercase italic">
+        <header className="h-[80px] bg-black flex items-center justify-between px-10 border-b border-white/10 shrink-0">
+          <div className="flex items-center gap-8">
+            <h1 className="text-4xl font-black tracking-tighter uppercase italic">
               RANKINGS
             </h1>
-            <div className="h-14 w-1 bg-white/20" />
+            <div className="h-10 w-1 bg-white/20" />
             <div className="flex flex-col justify-center">
-              <span className="text-3xl font-black text-white uppercase italic tracking-tighter leading-none">
+              <span className="text-2xl font-black text-white uppercase italic tracking-tighter leading-none">
                 {tournament.name}
               </span>
             </div>
@@ -191,41 +191,41 @@ export default function SpectatorPage() {
           <div className="flex items-center gap-6">
             <button 
               onClick={toggleFullscreen}
-              className="flex items-center gap-3 bg-white/10 hover:bg-white/20 px-6 py-3 rounded-xl transition-all border border-white/10 group"
+              className="flex items-center gap-2 bg-white/10 hover:bg-white/20 px-4 py-2 rounded-lg transition-all border border-white/10 group"
             >
               {isFullscreen ? (
                 <>
-                  <Minimize2 className="w-6 h-6 text-white group-hover:scale-110 transition-transform" />
-                  <span className="text-xl font-black uppercase italic tracking-tighter">Exit Fullscreen</span>
+                  <Minimize2 className="w-5 h-5 text-white group-hover:scale-110 transition-transform" />
+                  <span className="text-lg font-black uppercase italic tracking-tighter">Exit Fullscreen</span>
                 </>
               ) : (
                 <>
-                  <Maximize2 className="w-6 h-6 text-white group-hover:scale-110 transition-transform" />
-                  <span className="text-xl font-black uppercase italic tracking-tighter">Enter Fullscreen</span>
+                  <Maximize2 className="w-5 h-5 text-white group-hover:scale-110 transition-transform" />
+                  <span className="text-lg font-black uppercase italic tracking-tighter">Enter Fullscreen</span>
                 </>
               )}
             </button>
             
             <button 
               onClick={() => router.push('/')}
-              className="p-3 bg-white/10 hover:bg-white/20 rounded-xl transition-all border border-white/10 group"
+              className="p-2 bg-white/10 hover:bg-white/20 rounded-lg transition-all border border-white/10 group"
               title="Close Dashboard"
             >
-              <X className="w-6 h-6 text-white group-hover:rotate-90 transition-transform" />
+              <X className="w-5 h-5 text-white group-hover:rotate-90 transition-transform" />
             </button>
           </div>
         </header>
 
         <div className="flex-1 flex w-full overflow-hidden">
-          {/* Left Panel: Rankings (1260px) */}
-          <div className="w-[1260px] h-full flex flex-col relative shrink-0">
+          {/* Left Panel: Rankings (1320px) */}
+          <div className="w-[1320px] h-full flex flex-col relative shrink-0">
             <div className="flex-1 overflow-hidden relative z-10">
               <RankingsTable rankings={rankings} />
             </div>
           </div>
 
-          {/* Right Panel: Matches (660px) */}
-          <div className="w-[660px] h-full flex flex-col border-l border-white/10 shrink-0">
+          {/* Right Panel: Matches (600px) */}
+          <div className="w-[600px] h-full flex flex-col border-l border-white/10 shrink-0">
             <MatchSchedule matches={matches} teams={teams} />
           </div>
         </div>
