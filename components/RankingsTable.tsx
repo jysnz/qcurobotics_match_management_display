@@ -29,17 +29,10 @@ export default function RankingsTable({ rankings }: RankingsTableProps) {
 
   return (
     <div className="h-full flex flex-col bg-white relative">
-      {/* Watermark Logo (Shield) */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.04] z-0">
-        <div className="w-[600px] h-[600px] border-[40px] border-black rounded-full flex items-center justify-center">
-          <span className="text-[140px] font-black italic text-black">VEX U</span>
-        </div>
-      </div>
-
       {/* Table Header */}
       <div className={`grid ${gridLayout} ${gridGap} ${gridPadding} bg-[#F2F2F2] text-zinc-600 font-black uppercase text-6xl tracking-widest border-b-8 border-zinc-200 py-12 z-20 shrink-0 items-center`}>
         <div>RANK</div>
-        <div>TEAM</div>
+        <div></div>
         <div>TEAM NAME</div>
         <div className="text-center">WP</div>
         <div className="text-center">AP</div>

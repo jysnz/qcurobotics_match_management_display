@@ -6,6 +6,7 @@ import Ticker from './Ticker';
 interface Match {
   id: string;
   match_number: number;
+  match_type: string;
   red_team_id: number;
   blue_team_id: number;
   red_score: number;
@@ -28,6 +29,15 @@ export default function MatchSchedule({ matches, teams }: MatchScheduleProps) {
     return teams.find(t => t.id === id)?.team_name || `Team ${id}`;
   };
 
+  const getMatchPrefix = (type: string) => {
+    switch (type) {
+      case 'Qualification': return 'Q';
+      case 'Semi-Final': return 'SF';
+      case 'Final': return 'F';
+      default: return 'Q';
+    }
+  };
+
   const upcomingMatches = useMemo(() => {
     return matches.filter(m => m.status === 'Pending');
   }, [matches]);
@@ -42,7 +52,7 @@ export default function MatchSchedule({ matches, teams }: MatchScheduleProps) {
     <div className="h-full flex flex-col overflow-hidden bg-white">
       {/* Recent Results */}
       <div className="flex-1 flex flex-col min-h-0">
-        <div className="bg-black text-white font-black uppercase text-[clamp(1rem,1.5vw,2rem)] tracking-[0.2em] border-b border-white/10 py-[clamp(1rem,2vh,2rem)] px-[clamp(1.5rem,3vw,4rem)] z-20 shrink-0">
+        <div className="bg-[#F2F2F2] text-zinc-600 font-black uppercase text-6xl tracking-widest border-b-8 border-zinc-200 py-12 px-32 z-20 shrink-0">
           RESULTS
         </div>
         <div className="flex-1 overflow-hidden">
@@ -51,12 +61,12 @@ export default function MatchSchedule({ matches, teams }: MatchScheduleProps) {
               {recentResults.map((match, index) => (
                 <div 
                   key={`${match.id}-${index}`} 
-                  className={`grid grid-cols-[clamp(4rem,8vw,8rem)_1fr_clamp(12rem,18vw,24rem)_1fr] items-center py-[clamp(1.5rem,3vh,3rem)] px-[clamp(1.5rem,3vw,4rem)] transition-colors border-b border-black/5 ${
+                  className={`grid grid-cols-[140px_1fr_clamp(12rem,18vw,24rem)_1fr] items-center py-[clamp(1.5rem,3vh,3rem)] px-[clamp(1.5rem,3vw,4rem)] transition-colors border-b border-black/5 ${
                     index % 2 === 0 ? 'bg-white' : 'bg-[#F2F2F2]'
                   }`}
                 >
                   <div className="text-[clamp(2rem,4vw,4rem)] font-black italic tracking-tighter text-zinc-400 leading-none">
-                    #{match.match_number}
+                    {getMatchPrefix(match.match_type)}{match.match_number}
                   </div>
                   <div className="text-[clamp(1.75rem,3vw,3rem)] font-black text-red-600 uppercase text-right truncate leading-none pr-10">
                     {getTeamName(match.red_team_id).split(' ')[0]}
@@ -80,7 +90,7 @@ export default function MatchSchedule({ matches, teams }: MatchScheduleProps) {
 
       {/* Upcoming Matches */}
       <div className="flex-1 flex flex-col min-h-0 border-t border-black/10">
-        <div className="bg-black text-white font-black uppercase text-[clamp(1rem,1.5vw,2rem)] tracking-[0.2em] border-b border-white/10 py-[clamp(1rem,2vh,2rem)] px-[clamp(1.5rem,3vw,4rem)] z-20 shrink-0">
+        <div className="bg-[#F2F2F2] text-zinc-600 font-black uppercase text-6xl tracking-widest border-b-8 border-zinc-200 py-12 px-32 z-20 shrink-0">
           SCHEDULE
         </div>
         <div className="flex-1 overflow-hidden">
@@ -89,12 +99,12 @@ export default function MatchSchedule({ matches, teams }: MatchScheduleProps) {
               {upcomingMatches.map((match, index) => (
                 <div 
                   key={`${match.id}-${index}`} 
-                  className={`grid grid-cols-[clamp(4rem,8vw,8rem)_1fr_clamp(12rem,18vw,24rem)_1fr] items-center py-[clamp(1.5rem,3vh,3rem)] px-[clamp(1.5rem,3vw,4rem)] transition-colors border-b border-black/5 ${
+                  className={`grid grid-cols-[140px_1fr_clamp(12rem,18vw,24rem)_1fr] items-center py-[clamp(1.5rem,3vh,3rem)] px-[clamp(1.5rem,3vw,4rem)] transition-colors border-b border-black/5 ${
                     index % 2 === 0 ? 'bg-white' : 'bg-[#F2F2F2]'
                   }`}
                 >
                   <div className="text-[clamp(2rem,4vw,4rem)] font-black italic tracking-tighter text-zinc-400 leading-none">
-                    #{match.match_number}
+                    {getMatchPrefix(match.match_type)}{match.match_number}
                   </div>
                   <div className="text-[clamp(1.5rem,3vw,3rem)] font-black text-red-600 uppercase text-right truncate leading-none pr-8">
                     {getTeamName(match.red_team_id).split(' ')[0]}

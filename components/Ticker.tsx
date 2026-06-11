@@ -13,38 +13,48 @@ interface TickerProps {
 export default function Ticker({ children, speed = 0.5, className = "", itemCount, gap = 120 }: TickerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
+  const loopHeightRef = useRef<number>(0);
 
   useEffect(() => {
     const container = containerRef.current;
     const content = contentRef.current;
     if (!container || !content || itemCount === 0) return;
 
+    // Use ResizeObserver to get the most accurate height of the first content block
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (let entry of entries) {
+        if (entry.target === content.firstElementChild) {
+          loopHeightRef.current = entry.contentRect.height + gap;
+        }
+      }
+    });
+
+    if (content.firstElementChild) {
+      resizeObserver.observe(content.firstElementChild);
+    }
+
     let animationId: number;
     let scrollPos = 0;
 
     const animate = () => {
-      scrollPos += speed;
-      
-      // Calculate the height of one loop iteration
-      // We have: [Content A] [Gap] [Content B] [Gap]
-      // One loop is exactly [Content A] + [Gap]
-      // To find this, we can measure the first child's height + the gap
-      const firstChild = content.firstElementChild as HTMLElement;
-      if (!firstChild) return;
-      
-      const loopHeight = firstChild.offsetHeight + gap;
-      
-      if (scrollPos >= loopHeight) {
-        scrollPos -= loopHeight; // Precise reset for sub-pixel continuity
-      }
+      if (loopHeightRef.current > 0) {
+        scrollPos += speed;
+        
+        if (scrollPos >= loopHeightRef.current) {
+          scrollPos -= loopHeightRef.current;
+        }
 
-      content.style.transform = `translate3d(0, ${-scrollPos}px, 0)`;
+        content.style.transform = `translate3d(0, ${-scrollPos}px, 0)`;
+      }
       animationId = requestAnimationFrame(animate);
     };
 
     animationId = requestAnimationFrame(animate);
 
-    return () => cancelAnimationFrame(animationId);
+    return () => {
+      cancelAnimationFrame(animationId);
+      resizeObserver.disconnect();
+    };
   }, [speed, itemCount, gap]);
 
   return (
