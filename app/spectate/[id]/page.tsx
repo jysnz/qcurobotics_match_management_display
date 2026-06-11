@@ -232,9 +232,7 @@ export default function SpectatorPage() {
 
         {/* Footer */}
         <footer className="h-[48px] bg-zinc-900 flex items-center justify-between px-6 shrink-0">
-          <div className="flex-1 max-w-xl bg-zinc-800 h-2 rounded-full overflow-hidden">
-            <div className="h-full bg-cyan-500 w-[45%]" />
-          </div>
+          <div className="flex-1" />
           <div className="flex items-center gap-8 ml-8">
             <div className="flex items-center gap-4">
               <div className="w-4 h-4 bg-zinc-700 rounded-sm" />

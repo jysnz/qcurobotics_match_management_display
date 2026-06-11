@@ -57,7 +57,7 @@ export default function MatchSchedule({ matches, teams }: MatchScheduleProps) {
         </div>
         <div className="flex-1 overflow-hidden">
           {recentResults.length > 0 ? (
-            <Ticker itemCount={recentResults.length} speed={0.4} className="h-full" gap={120}>
+            <Ticker itemCount={recentResults.length} speed={0.8} className="h-full" gap={120}>
               {recentResults.map((match, index) => (
                 <div 
                   key={`${match.id}-${index}`} 
@@ -95,7 +95,7 @@ export default function MatchSchedule({ matches, teams }: MatchScheduleProps) {
         </div>
         <div className="flex-1 overflow-hidden">
           {upcomingMatches.length > 0 ? (
-            <Ticker itemCount={upcomingMatches.length} speed={0.4} className="h-full" gap={120}>
+            <Ticker itemCount={upcomingMatches.length} speed={0.8} className="h-full" gap={120}>
               {upcomingMatches.map((match, index) => (
                 <div 
                   key={`${match.id}-${index}`} 

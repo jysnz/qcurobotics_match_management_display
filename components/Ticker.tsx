@@ -66,14 +66,8 @@ export default function Ticker({ children, speed = 0.5, className = "", itemCoun
         {/* First set of content */}
         <div>{children}</div>
         
-        {/* The Gap (White background) */}
-        <div style={{ height: `${gap}px` }} className="bg-white shrink-0" aria-hidden="true" />
-        
         {/* Second set of content for seamless loop */}
         <div>{children}</div>
-
-        {/* Extra gap at the very bottom (White background) */}
-        <div style={{ height: `${gap}px` }} className="bg-white shrink-0" aria-hidden="true" />
       </div>
     </div>
   );

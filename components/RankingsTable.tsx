@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef } from 'react';
+import { useEffect, useState } from 'react';
 import Ticker from './Ticker';
 
 interface Ranking {
@@ -21,11 +21,27 @@ interface RankingsTableProps {
 }
 
 export default function RankingsTable({ rankings }: RankingsTableProps) {
+  const [logos, setLogos] = useState<string[]>([]);
+
+  useEffect(() => {
+    async function fetchLogos() {
+      try {
+        const response = await fetch('/api/logos');
+        if (response.ok) {
+          const data = await response.json();
+          setLogos(data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch logos:', error);
+      }
+    }
+    fetchLogos();
+  }, []);
+
   // Define consistent grid structure for absolute alignment
-  // Rank: 60px, Team: 140px (Fixed basis for straight-line margin), Team Name: 1fr, Stats: 80px each, W-L-T: 140px
   const gridLayout = "grid-cols-[60px_140px_1fr_80px_80px_80px_140px]";
-  const gridGap = "gap-x-10"; // Compact gap for dense resolution
-  const gridPadding = "px-16"; // Compact padding for dense resolution
+  const gridGap = "gap-x-10"; 
+  const gridPadding = "px-16";
 
   return (
     <div className="h-full flex flex-col bg-white relative">
@@ -43,37 +59,86 @@ export default function RankingsTable({ rankings }: RankingsTableProps) {
       {/* Table Body (Infinite Ticker) */}
       <div className="flex-1 overflow-hidden relative z-10">
         {rankings.length > 0 ? (
-          <Ticker itemCount={rankings.length} speed={0.5} className="h-full" gap={120}>
-            {rankings.map((ranking, index) => (
-              <div 
-                key={`${ranking.team_id}-${index}`}
-                className={`grid ${gridLayout} ${gridGap} ${gridPadding} items-center py-4 transition-colors border-b-2 border-zinc-100 ${
-                  index % 2 === 0 ? 'bg-white' : 'bg-[#F9F9F9]'
-                }`}
-              >
-                <div className="text-3xl font-black text-black leading-none">
-                  {index + 1}
+          <Ticker itemCount={rankings.length * (logos.length || 1)} speed={0.8} className="h-full" gap={0}>
+            {/* Cycle through logos, providing a rankings list for each logo */}
+            {logos.length > 0 ? logos.map((logo, logoIndex) => (
+              <div key={`logo-group-${logoIndex}`}>
+                {/* Logo Section - Appears BEFORE the rankings list */}
+                <div className="bg-white py-0 flex flex-col items-center justify-center border-b-2 border-zinc-100">
+                  <div className="relative w-full max-w-5xl flex justify-center px-20">
+                    <img 
+                      src={logo} 
+                      alt="Sponsor/Event Logo" 
+                      className="max-h-[400px] w-auto object-contain transition-all duration-500"
+                    />
+                  </div>
                 </div>
-                <div className="text-3xl font-black text-black tracking-tighter uppercase leading-none">
-                  {ranking.teams?.team_name?.split(' ')[0] || ranking.team_id}
-                </div>
-                <div className="text-2xl font-bold text-zinc-900 truncate leading-none">
-                  {ranking.teams?.team_name || `Team ${ranking.team_id}`}
-                </div>
-                <div className="text-3xl font-black text-center text-black leading-none">
-                  {ranking.wp}
-                </div>
-                <div className="text-3xl font-black text-center text-black leading-none">
-                  {ranking.ap}
-                </div>
-                <div className="text-3xl font-black text-center text-black leading-none">
-                  {ranking.sp}
-                </div>
-                <div className="text-3xl font-bold font-mono text-center text-zinc-500 tracking-tighter leading-none">
-                  {ranking.wins}-{ranking.losses}-{ranking.ties}
-                </div>
+
+                {/* Current iteration of rankings */}
+                {rankings.map((ranking, index) => (
+                  <div 
+                    key={`${ranking.team_id}-${logoIndex}-${index}`}
+                    className={`grid ${gridLayout} ${gridGap} ${gridPadding} items-center py-4 transition-colors border-b-2 border-zinc-100 ${
+                      index % 2 === 0 ? 'bg-white' : 'bg-[#F9F9F9]'
+                    }`}
+                  >
+                    <div className="text-3xl font-black text-black leading-none">
+                      {index + 1}
+                    </div>
+                    <div className="text-3xl font-black text-black tracking-tighter uppercase leading-none">
+                      {ranking.teams?.team_name?.split(' ')[0] || ranking.team_id}
+                    </div>
+                    <div className="text-2xl font-bold text-zinc-900 truncate leading-none">
+                      {ranking.teams?.team_name || `Team ${ranking.team_id}`}
+                    </div>
+                    <div className="text-3xl font-black text-center text-black leading-none">
+                      {ranking.wp}
+                    </div>
+                    <div className="text-3xl font-black text-center text-black leading-none">
+                      {ranking.ap}
+                    </div>
+                    <div className="text-3xl font-black text-center text-black leading-none">
+                      {ranking.sp}
+                    </div>
+                    <div className="text-3xl font-bold font-mono text-center text-zinc-500 tracking-tighter leading-none">
+                      {ranking.wins}-{ranking.losses}-{ranking.ties}
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
+            )) : (
+              // Fallback if no logos found (just the rankings once)
+              rankings.map((ranking, index) => (
+                <div 
+                  key={`${ranking.team_id}-${index}`}
+                  className={`grid ${gridLayout} ${gridGap} ${gridPadding} items-center py-4 transition-colors border-b-2 border-zinc-100 ${
+                    index % 2 === 0 ? 'bg-white' : 'bg-[#F9F9F9]'
+                  }`}
+                >
+                  <div className="text-3xl font-black text-black leading-none">
+                    {index + 1}
+                  </div>
+                  <div className="text-3xl font-black text-black tracking-tighter uppercase leading-none">
+                    {ranking.teams?.team_name?.split(' ')[0] || ranking.team_id}
+                  </div>
+                  <div className="text-2xl font-bold text-zinc-900 truncate leading-none">
+                    {ranking.teams?.team_name || `Team ${ranking.team_id}`}
+                  </div>
+                  <div className="text-3xl font-black text-center text-black leading-none">
+                    {ranking.wp}
+                  </div>
+                  <div className="text-3xl font-black text-center text-black leading-none">
+                    {ranking.ap}
+                  </div>
+                  <div className="text-3xl font-black text-center text-black leading-none">
+                    {ranking.sp}
+                  </div>
+                  <div className="text-3xl font-bold font-mono text-center text-zinc-500 tracking-tighter leading-none">
+                    {ranking.wins}-{ranking.losses}-{ranking.ties}
+                  </div>
+                </div>
+              ))
+            )}
           </Ticker>
         ) : (
           <div className="h-full flex flex-col items-center justify-center text-zinc-600 italic uppercase font-black tracking-widest py-20">
