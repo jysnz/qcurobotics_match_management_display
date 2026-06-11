@@ -61,7 +61,7 @@ export default function MatchSchedule({ matches, teams }: MatchScheduleProps) {
               {recentResults.map((match, index) => (
                 <div 
                   key={`${match.id}-${index}`} 
-                  className={`grid grid-cols-[60px_1fr_120px_1fr] items-center py-4 px-6 transition-colors border-b-2 border-black/5 ${
+                  className={`grid grid-cols-[60px_1fr_200px_1fr] items-center py-4 px-6 transition-colors border-b-2 border-black/5 ${
                     index % 2 === 0 ? 'bg-white' : 'bg-[#F2F2F2]'
                   }`}
                 >
@@ -72,7 +72,7 @@ export default function MatchSchedule({ matches, teams }: MatchScheduleProps) {
                     {getTeamName(match.red_team_id).split(' ')[0]}
                   </div>
                   <div className="text-3xl font-black text-black tabular-nums tracking-tighter text-center leading-none bg-black/5 py-3 rounded-lg mx-2">
-                    {match.red_score}—{match.blue_score}
+                    {match.red_score} - {match.blue_score}
                   </div>
                   <div className="text-2xl font-black text-blue-600 uppercase text-left truncate leading-none pl-3">
                     {getTeamName(match.blue_team_id).split(' ')[0]}
