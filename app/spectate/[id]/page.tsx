@@ -149,27 +149,28 @@ export default function SpectatorPage() {
   return (
     <div className="fixed inset-0 bg-black text-white font-sans overflow-hidden flex flex-col">
       {/* Header */}
-      <header className="h-20 bg-black flex items-center justify-between px-6 border-b border-white/10 shrink-0">
-        <div className="flex items-center gap-6">
-          <h1 className="text-4xl font-black tracking-tighter uppercase italic">
+      <header className="h-28 bg-black flex items-center justify-between px-10 border-b border-white/10 shrink-0">
+        <div className="flex items-center gap-10">
+          <h1 className="text-6xl font-black tracking-tighter uppercase italic">
             RANKINGS
           </h1>
-          <div className="h-8 w-px bg-white/20" />
+          <div className="h-16 w-1 bg-white/20" />
           <div className="flex flex-col justify-center">
-            <span className="text-sm font-bold text-zinc-500 uppercase tracking-widest">2026 VEX Robotics World Championship</span>
-            <span className="text-xl font-black text-white uppercase italic tracking-tight">{tournament.name}</span>
+            <span className="text-4xl font-black text-white uppercase italic tracking-tighter leading-none">
+              {tournament.name}
+            </span>
           </div>
         </div>
 
         <div className="flex items-center h-full">
-          <div className="flex items-center gap-4 mr-8">
-            <div className="w-12 h-12 bg-white/10 rounded flex items-center justify-center italic font-black text-xs">VEX U</div>
+          <div className="flex items-center gap-6 mr-12">
+            <div className="w-16 h-16 bg-white/10 rounded-lg flex items-center justify-center italic font-black text-xl">VEX U</div>
           </div>
-          <div className="h-full bg-white text-black px-12 flex items-center relative overflow-hidden group">
-            <div className="absolute top-0 left-0 w-8 h-full bg-black -skew-x-[20deg] -translate-x-1/2" />
+          <div className="h-full bg-white text-black px-16 flex items-center relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-10 h-full bg-black -skew-x-[20deg] -translate-x-1/2" />
             <div className="flex flex-col items-center">
-              <span className="text-[10px] font-black uppercase tracking-tighter mb-0.5">PRESENTED BY</span>
-              <div className="h-6 w-20 bg-zinc-200 flex items-center justify-center font-black italic text-sm">GOOGLE</div>
+              <span className="text-xs font-black uppercase tracking-widest mb-1 opacity-60">PRESENTED BY</span>
+              <div className="h-8 w-28 bg-zinc-200 flex items-center justify-center font-black italic text-lg tracking-widest">GOOGLE</div>
             </div>
           </div>
         </div>

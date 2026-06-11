@@ -10,7 +10,7 @@ interface TickerProps {
   gap?: number; // Gap in pixels between loops
 }
 
-export default function Ticker({ children, speed = 0.5, className = "", itemCount, gap = 100 }: TickerProps) {
+export default function Ticker({ children, speed = 0.5, className = "", itemCount, gap = 120 }: TickerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
 
@@ -20,21 +20,25 @@ export default function Ticker({ children, speed = 0.5, className = "", itemCoun
     if (!container || !content || itemCount === 0) return;
 
     let animationId: number;
-    let scrollPos = container.scrollTop;
+    let scrollPos = 0;
 
     const animate = () => {
       scrollPos += speed;
       
-      // The total height of one loop is (total scrollHeight - gap) / 2
-      // However, it's easier to just use the height of the first child set + gap
-      const firstSetHeight = (content.scrollHeight - gap) / 2;
-      const loopHeight = firstSetHeight + gap;
+      // Calculate the height of one loop iteration
+      // We have: [Content A] [Gap] [Content B] [Gap]
+      // One loop is exactly [Content A] + [Gap]
+      // To find this, we can measure the first child's height + the gap
+      const firstChild = content.firstElementChild as HTMLElement;
+      if (!firstChild) return;
+      
+      const loopHeight = firstChild.offsetHeight + gap;
       
       if (scrollPos >= loopHeight) {
-        scrollPos = 0;
+        scrollPos -= loopHeight; // Precise reset for sub-pixel continuity
       }
 
-      container.scrollTop = scrollPos;
+      content.style.transform = `translate3d(0, ${-scrollPos}px, 0)`;
       animationId = requestAnimationFrame(animate);
     };
 
@@ -46,20 +50,20 @@ export default function Ticker({ children, speed = 0.5, className = "", itemCoun
   return (
     <div 
       ref={containerRef}
-      className={`overflow-hidden pointer-events-none ${className}`}
+      className={`overflow-hidden relative ${className}`}
     >
-      <div ref={contentRef} className="flex flex-col">
+      <div ref={contentRef} className="flex flex-col will-change-transform">
         {/* First set of content */}
         <div>{children}</div>
         
         {/* The Gap (White background) */}
-        <div style={{ height: `${gap}px` }} className="bg-white" aria-hidden="true" />
+        <div style={{ height: `${gap}px` }} className="bg-white shrink-0" aria-hidden="true" />
         
         {/* Second set of content for seamless loop */}
         <div>{children}</div>
 
         {/* Extra gap at the very bottom (White background) */}
-        <div style={{ height: `${gap}px` }} className="bg-white" aria-hidden="true" />
+        <div style={{ height: `${gap}px` }} className="bg-white shrink-0" aria-hidden="true" />
       </div>
     </div>
   );
