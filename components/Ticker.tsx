@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, ReactNode } from 'react';
+import { useEffect, useRef, ReactNode } from 'react';
 
 interface TickerProps {
   children: ReactNode;
@@ -23,7 +23,7 @@ export default function Ticker({ children, speed = 0.5, className = "", itemCoun
 
     // Use ResizeObserver to get the most accurate height of the first content block
     const resizeObserver = new ResizeObserver((entries) => {
-      for (let entry of entries) {
+      for (const entry of entries) {
         if (entry.target === content.firstElementChild) {
           loopHeightRef.current = entry.contentRect.height + gap;
           // Ensure scrollPos doesn't exceed loopHeight if height decreased

@@ -39,8 +39,8 @@ export default function RankingsTable({ rankings }: RankingsTableProps) {
   }, []);
 
   // Define consistent grid structure for absolute alignment
-  const gridLayout = "grid-cols-[60px_140px_1fr_80px_80px_80px_140px]";
-  const gridGap = "gap-x-10"; 
+  const gridLayout = "grid-cols-[80px_180px_1fr_90px_90px_90px_180px]";
+  const gridGap = "gap-x-8"; 
   const gridPadding = "px-16";
 
   return (

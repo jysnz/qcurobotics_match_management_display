@@ -18,9 +18,9 @@ function LoginForm() {
 
   useEffect(() => {
     if (errorType === 'unauthorized') {
-      setErrorMsg('Access denied. Your account is not authorized to access the spectator display.')
+      setTimeout(() => setErrorMsg('Access denied. Your account is not authorized to access the spectator display.'), 0)
     } else if (errorType === 'auth_failed') {
-      setErrorMsg('Authentication failed. Please try again.')
+      setTimeout(() => setErrorMsg('Authentication failed. Please try again.'), 0)
     }
   }, [errorType])
 

@@ -80,7 +80,7 @@ export default function MatchSchedule({ matches, teams }: MatchScheduleProps) {
                   {recentResults.map((match, index) => (
                     <div 
                       key={`${match.id}-${logoIndex}-${index}`} 
-                      className={`grid grid-cols-[60px_1fr_200px_1fr] items-center py-4 px-6 transition-colors border-b-2 border-black/5 ${
+                      className={`grid grid-cols-[80px_1fr_140px_1fr] gap-x-4 items-center py-4 px-8 transition-colors border-b-2 border-black/5 ${
                         index % 2 === 0 ? 'bg-white' : 'bg-[#F2F2F2]'
                       }`}
                     >
@@ -146,7 +146,7 @@ export default function MatchSchedule({ matches, teams }: MatchScheduleProps) {
                   {upcomingMatches.map((match, index) => (
                     <div 
                       key={`${match.id}-${logoIndex}-${index}`} 
-                      className={`grid grid-cols-[60px_1fr_120px_1fr] items-center py-4 px-6 transition-colors border-b-2 border-black/5 ${
+                      className={`grid grid-cols-[80px_1fr_140px_1fr] gap-x-4 items-center py-4 px-8 transition-colors border-b-2 border-black/5 ${
                         index % 2 === 0 ? 'bg-white' : 'bg-[#F2F2F2]'
                       }`}
                     >

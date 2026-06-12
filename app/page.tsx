@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase-browser';
 import { Trophy, Play, Clock, CheckCircle, Info, LogOut } from 'lucide-react';
@@ -26,27 +26,7 @@ export default function LandingPage() {
     router.refresh();
   };
 
-  useEffect(() => {
-    fetchTournaments();
-
-    // Set up real-time subscription
-    const channel = supabase
-      .channel('tournaments_changes')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'tournaments' },
-        () => {
-          fetchTournaments();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [supabase]);
-
-  const fetchTournaments = async () => {
+  const fetchTournaments = useCallback(async () => {
     console.log('Fetching tournaments starting...');
     try {
       const { data, error } = await supabase
@@ -75,7 +55,27 @@ export default function LandingPage() {
       setLoading(false);
       console.log('Fetching tournaments finished.');
     }
-  };
+  }, [supabase]);
+
+  useEffect(() => {
+    fetchTournaments();
+
+    // Set up real-time subscription
+    const channel = supabase
+      .channel('tournaments_changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'tournaments' },
+        () => {
+          fetchTournaments();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [supabase, fetchTournaments]);
 
   const getStatusIcon = (status: string) => {
     switch (status) {
