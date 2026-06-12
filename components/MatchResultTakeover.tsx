@@ -1,90 +1,169 @@
 'use client';
 
-import { Trophy, X } from 'lucide-react';
+import { Trophy } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 interface MatchResultTakeoverProps {
   match: any;
   teams: any[];
+  tournamentName: string;
   onClose: () => void;
 }
 
-export default function MatchResultTakeover({ match, teams, onClose }: MatchResultTakeoverProps) {
+export default function MatchResultTakeover({ match, teams, tournamentName, onClose }: MatchResultTakeoverProps) {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
+    console.log(`[RESULT_SCREEN] Rendering match result UI for match ${match.id}`);
     setVisible(true);
-  }, []);
+    // Start exit animation 500ms before the 10s mark
+    const timer = setTimeout(() => {
+      console.log(`[RESULT_SCREEN] Starting exit animation for match ${match.id}`);
+      setVisible(false);
+    }, 9500);
+    return () => {
+      console.log(`[RESULT_SCREEN] MatchResultTakeover unmounting for match ${match.id}`);
+      clearTimeout(timer);
+    };
+  }, [match.id]);
 
-  const getTeamName = (id: number) => {
-    return teams.find(t => t.id === id)?.team_name || `Team ${id}`;
+  const getTeam = (id: number) => {
+    return teams.find(t => t.id === id) || { id, team_name: `Team ${id}` };
+  };
+
+  const getMatchPrefix = (type: string) => {
+    switch (type) {
+      case 'Qualification': return 'Q';
+      case 'Semi-Final': return 'SF';
+      case 'Final': return 'F';
+      default: return 'Q';
+    }
   };
 
   const winner = match.red_score > match.blue_score ? 'RED' : match.blue_score > match.red_score ? 'BLUE' : 'TIE';
+  const redTeam = getTeam(match.red_team_id);
+  const blueTeam = getTeam(match.blue_team_id);
+
+  const statsRows = [
+    { label: 'Blocks Scored', red: '-', blue: '-' },
+    { label: 'Long Goals Controlled', red: '-', blue: '-' },
+    { label: 'Upper Goal Controlled', red: '-', blue: '-' },
+    { label: 'Lower Goal Controlled', red: '-', blue: '-' },
+    { label: 'Parked Robots', red: '-', blue: '-' },
+    { label: 'Autonomous Bonus', red: match.autonomous_winner === 'Red' ? 'WIN' : '-', blue: match.autonomous_winner === 'Blue' ? 'WIN' : '-' },
+    { label: 'Autonomous Win Point', red: '-', blue: '-' },
+  ];
 
   return (
-    <div className={`fixed inset-0 z-[100] flex items-center justify-center bg-black/95 backdrop-blur-sm transition-all duration-700 ${visible ? 'opacity-100' : 'opacity-0'}`}>
-      <div className={`w-full max-w-6xl p-8 transition-all duration-1000 delay-300 ${visible ? 'scale-100 translate-y-0' : 'scale-90 translate-y-10'}`}>
-        
-        {/* Match Header */}
-        <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold text-zinc-500 uppercase tracking-[0.2em] mb-2">Match Result</h2>
-          <h1 className="text-8xl font-black italic tracking-tighter text-white">
-            QUALIFICATION <span className="text-amber-500">{match.match_number}</span>
-          </h1>
-        </div>
+    <div className={`fixed inset-0 z-[100] flex flex-col bg-[#050505] text-white transition-all duration-700 ${visible ? 'opacity-100' : 'opacity-0'}`}>
+      
+      {/* Background Glows */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -left-[10%] top-[20%] w-[40%] h-[60%] bg-red-600/10 blur-[150px] rounded-full" />
+        <div className="absolute -right-[10%] top-[20%] w-[40%] h-[60%] bg-blue-600/10 blur-[150px] rounded-full" />
+      </div>
 
-        {/* Score Display */}
-        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-12">
+      {/* Header Section (Top-Left) */}
+      <div className="absolute top-12 left-16 z-20">
+        <div className="text-2xl font-black text-zinc-500 uppercase tracking-[0.2em] mb-2">
+          {tournamentName}
+        </div>
+        <div className="text-[12rem] font-black italic tracking-tighter leading-[0.8] text-white">
+          {getMatchPrefix(match.match_type)}<span className="text-amber-500">{match.match_number}</span>
+        </div>
+      </div>
+
+      {/* Main Content Area */}
+      <div className="flex-1 flex items-center justify-center px-16 pt-32 pb-48">
+        <div className="w-full grid grid-cols-[1fr_2px_600px_2px_1fr] items-center gap-0 h-[600px]">
           
-          {/* Red Alliance */}
-          <div className={`relative p-12 rounded-[2rem] border-4 transition-all duration-1000 delay-500 ${winner === 'RED' ? 'bg-red-600 border-red-400 shadow-[0_0_100px_rgba(220,38,38,0.4)]' : 'bg-red-950/20 border-red-900/40 opacity-40'}`}>
-            {winner === 'RED' && (
-              <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-amber-500 text-black px-6 py-2 rounded-full font-black italic flex items-center gap-2 shadow-xl animate-bounce">
-                <Trophy className="w-5 h-5" /> WINNER
+          {/* Red Score */}
+          <div className="flex flex-col items-center justify-center h-full">
+             <div className="text-red-500 font-black text-3xl uppercase tracking-widest mb-4">RED SCORE</div>
+             <div className="text-[25rem] font-black leading-none tabular-nums tracking-tighter text-white drop-shadow-[0_0_50px_rgba(220,38,38,0.3)]">
+               {match.red_score}
+             </div>
+          </div>
+
+          {/* Separator */}
+          <div className="h-full bg-zinc-800/50" />
+
+          {/* Center Statistics Panel */}
+          <div className="h-full bg-zinc-900/30 backdrop-blur-xl border-x border-white/5 px-12 py-8 flex flex-col justify-between">
+            <div className="text-center mb-8">
+              <span className="text-xl font-black text-zinc-400 uppercase tracking-[0.3em]">MATCH STATISTICS</span>
+            </div>
+            
+            <div className="space-y-4">
+              {statsRows.map((row, idx) => (
+                <div key={idx} className="grid grid-cols-[100px_1fr_100px] items-center gap-4 py-2 border-b border-white/5 last:border-0">
+                  <div className={`text-2xl font-black text-center ${row.red === 'WIN' ? 'text-red-500' : 'text-zinc-600'}`}>{row.red}</div>
+                  <div className="text-lg font-bold text-zinc-400 uppercase tracking-widest text-center">{row.label}</div>
+                  <div className={`text-2xl font-black text-center ${row.blue === 'WIN' ? 'text-blue-500' : 'text-zinc-600'}`}>{row.blue}</div>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-8 flex flex-col items-center">
+              <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden">
+                <div className="h-full bg-amber-500 animate-shrink" />
               </div>
-            )}
-            <div className="text-center">
-              <span className="text-2xl font-black text-white/50 mb-4 block uppercase tracking-widest">RED ALLIANCE</span>
-              <span className="text-6xl font-black text-white block mb-8 tracking-tighter">{match.red_team_id}</span>
-              <span className="text-9xl font-black text-white leading-none">{match.red_score}</span>
+              <span className="mt-4 text-xs font-black text-zinc-600 uppercase tracking-[0.4em]">POSTING RESULTS...</span>
             </div>
           </div>
 
-          {/* VS Divider */}
-          <div className="text-4xl font-black text-zinc-800 italic">VS</div>
+          {/* Separator */}
+          <div className="h-full bg-zinc-800/50" />
 
-          {/* Blue Alliance */}
-          <div className={`relative p-12 rounded-[2rem] border-4 transition-all duration-1000 delay-500 ${winner === 'BLUE' ? 'bg-blue-600 border-blue-400 shadow-[0_0_100px_rgba(37,99,235,0.4)]' : 'bg-blue-950/20 border-blue-900/40 opacity-40'}`}>
-            {winner === 'BLUE' && (
-              <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-amber-500 text-black px-6 py-2 rounded-full font-black italic flex items-center gap-2 shadow-xl animate-bounce">
-                <Trophy className="w-5 h-5" /> WINNER
-              </div>
-            )}
-            <div className="text-center">
-              <span className="text-2xl font-black text-white/50 mb-4 block uppercase tracking-widest">BLUE ALLIANCE</span>
-              <span className="text-6xl font-black text-white block mb-8 tracking-tighter">{match.blue_team_id}</span>
-              <span className="text-9xl font-black text-white leading-none">{match.blue_score}</span>
-            </div>
+          {/* Blue Score */}
+          <div className="flex flex-col items-center justify-center h-full">
+             <div className="text-blue-500 font-black text-3xl uppercase tracking-widest mb-4">BLUE SCORE</div>
+             <div className="text-[25rem] font-black leading-none tabular-nums tracking-tighter text-white drop-shadow-[0_0_50px_rgba(37,99,235,0.3)]">
+               {match.blue_score}
+             </div>
           </div>
 
         </div>
+      </div>
 
-        {/* Tie Message */}
-        {winner === 'TIE' && (
-          <div className="mt-12 text-center">
-            <div className="inline-block bg-zinc-800 text-zinc-300 px-10 py-4 rounded-full text-3xl font-black italic border border-white/10">
-              IT'S A TIE!
+      {/* Winner Banner (Bottom Center) */}
+      <div className="absolute bottom-40 left-1/2 -translate-x-1/2 z-30">
+        <div className={`px-24 py-6 rounded-full border-4 flex items-center gap-6 shadow-2xl transition-transform duration-1000 ${visible ? 'scale-100' : 'scale-0'} ${
+          winner === 'RED' ? 'bg-red-600 border-red-400 shadow-red-600/40' : 
+          winner === 'BLUE' ? 'bg-blue-600 border-blue-400 shadow-blue-600/40' : 
+          'bg-zinc-800 border-zinc-600'
+        }`}>
+          <Trophy className="w-12 h-12 text-white fill-white" />
+          <span className="text-6xl font-black italic text-white uppercase tracking-tighter">
+            {winner === 'TIE' ? "MATCH IS A TIE!" : `${winner} ALLIANCE WINS!`}
+          </span>
+        </div>
+      </div>
+
+      {/* Bottom Alliance Panels */}
+      <div className="absolute bottom-0 left-0 right-0 h-32 flex">
+        {/* Red Panel */}
+        <div className="flex-1 bg-gradient-to-r from-red-600 to-red-700 flex items-center px-12 border-t-4 border-red-400">
+          <div className="flex items-center gap-8">
+            <span className="text-2xl font-black text-red-200 uppercase tracking-[0.2em] italic">RED ALLIANCE</span>
+            <div className="h-10 w-px bg-red-400/50" />
+            <div className="flex items-baseline gap-4">
+              <span className="text-5xl font-black text-white italic">{redTeam.team_id}</span>
+              <span className="text-2xl font-bold text-red-100 uppercase tracking-tighter truncate max-w-md">{redTeam.team_name}</span>
             </div>
           </div>
-        )}
+        </div>
 
-        {/* Closing Soon indicator */}
-        <div className="mt-20 flex flex-col items-center">
-          <div className="w-64 h-1 bg-white/10 rounded-full overflow-hidden">
-            <div className="h-full bg-amber-500 animate-shrink" />
+        {/* Blue Panel */}
+        <div className="flex-1 bg-gradient-to-l from-blue-600 to-blue-700 flex items-center justify-end px-12 border-t-4 border-blue-400">
+          <div className="flex items-center gap-8">
+            <div className="flex items-baseline gap-4 text-right">
+              <span className="text-2xl font-bold text-blue-100 uppercase tracking-tighter truncate max-w-md">{blueTeam.team_name}</span>
+              <span className="text-5xl font-black text-white italic">{blueTeam.team_id}</span>
+            </div>
+            <div className="h-10 w-px bg-blue-400/50" />
+            <span className="text-2xl font-black text-blue-200 uppercase tracking-[0.2em] italic">BLUE ALLIANCE</span>
           </div>
-          <span className="mt-4 text-xs font-bold text-zinc-600 uppercase tracking-widest">Returning to Rankings...</span>
         </div>
       </div>
 
@@ -94,7 +173,7 @@ export default function MatchResultTakeover({ match, teams, onClose }: MatchResu
           to { width: 0%; }
         }
         .animate-shrink {
-          animation: shrink 20s linear forwards;
+          animation: shrink 10s linear forwards;
         }
       `}</style>
     </div>

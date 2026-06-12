@@ -14,6 +14,7 @@ export default function Ticker({ children, speed = 0.5, className = "", itemCoun
   const containerRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const loopHeightRef = useRef<number>(0);
+  const scrollPosRef = useRef<number>(0);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -25,6 +26,10 @@ export default function Ticker({ children, speed = 0.5, className = "", itemCoun
       for (let entry of entries) {
         if (entry.target === content.firstElementChild) {
           loopHeightRef.current = entry.contentRect.height + gap;
+          // Ensure scrollPos doesn't exceed loopHeight if height decreased
+          if (scrollPosRef.current >= loopHeightRef.current) {
+            scrollPosRef.current = 0;
+          }
         }
       }
     });
@@ -34,17 +39,16 @@ export default function Ticker({ children, speed = 0.5, className = "", itemCoun
     }
 
     let animationId: number;
-    let scrollPos = 0;
 
     const animate = () => {
       if (loopHeightRef.current > 0) {
-        scrollPos += speed;
+        scrollPosRef.current += speed;
         
-        if (scrollPos >= loopHeightRef.current) {
-          scrollPos -= loopHeightRef.current;
+        if (scrollPosRef.current >= loopHeightRef.current) {
+          scrollPosRef.current -= loopHeightRef.current;
         }
 
-        content.style.transform = `translate3d(0, ${-scrollPos}px, 0)`;
+        content.style.transform = `translate3d(0, ${-scrollPosRef.current}px, 0)`;
       }
       animationId = requestAnimationFrame(animate);
     };

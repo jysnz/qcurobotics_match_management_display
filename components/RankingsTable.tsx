@@ -91,16 +91,16 @@ export default function RankingsTable({ rankings }: RankingsTableProps) {
                     <div className="text-2xl font-bold text-zinc-900 truncate leading-none">
                       {ranking.teams?.team_name || `Team ${ranking.team_id}`}
                     </div>
-                    <div className="text-3xl font-black text-center text-black leading-none">
-                      {ranking.wp}
+                    <div className="text-3xl font-medium text-center text-black leading-none">
+                      {ranking.wp.toFixed(2)}
                     </div>
-                    <div className="text-3xl font-black text-center text-black leading-none">
-                      {ranking.ap}
+                    <div className="text-3xl font-medium text-center text-black leading-none">
+                      {ranking.ap.toFixed(2)}
                     </div>
-                    <div className="text-3xl font-black text-center text-black leading-none">
-                      {ranking.sp}
+                    <div className="text-3xl font-medium text-center text-black leading-none">
+                      {ranking.sp.toFixed(2)}
                     </div>
-                    <div className="text-3xl font-bold font-mono text-center text-zinc-500 tracking-tighter leading-none">
+                    <div className="text-3xl font-black font-mono text-center text-black tracking-tighter leading-none">
                       {ranking.wins}-{ranking.losses}-{ranking.ties}
                     </div>
                   </div>
@@ -124,16 +124,16 @@ export default function RankingsTable({ rankings }: RankingsTableProps) {
                   <div className="text-2xl font-bold text-zinc-900 truncate leading-none">
                     {ranking.teams?.team_name || `Team ${ranking.team_id}`}
                   </div>
-                  <div className="text-3xl font-black text-center text-black leading-none">
-                    {ranking.wp}
+                  <div className="text-3xl font-medium text-center text-black leading-none">
+                    {ranking.wp.toFixed(2)}
                   </div>
-                  <div className="text-3xl font-black text-center text-black leading-none">
-                    {ranking.ap}
+                  <div className="text-3xl font-medium text-center text-black leading-none">
+                    {ranking.ap.toFixed(2)}
                   </div>
-                  <div className="text-3xl font-black text-center text-black leading-none">
-                    {ranking.sp}
+                  <div className="text-3xl font-medium text-center text-black leading-none">
+                    {ranking.sp.toFixed(2)}
                   </div>
-                  <div className="text-3xl font-bold font-mono text-center text-zinc-500 tracking-tighter leading-none">
+                  <div className="text-3xl font-black font-mono text-center text-black tracking-tighter leading-none">
                     {ranking.wins}-{ranking.losses}-{ranking.ties}
                   </div>
                 </div>

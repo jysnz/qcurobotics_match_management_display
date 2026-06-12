@@ -15,10 +15,11 @@ export default function SpectatorPage() {
   const [rankings, setRankings] = useState<any[]>([]);
   const [matches, setMatches] = useState<any[]>([]);
   const [teams, setTeams] = useState<any[]>([]);
-  const [lastMatchResult, setLastMatchResult] = useState<any>(null);
-  const [showTakeover, setShowTakeover] = useState(false);
+  const [resultQueue, setResultQueue] = useState<any[]>([]);
+  const [currentResult, setCurrentResult] = useState<any>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [scale, setScale] = useState(1);
+  const resultTimerRef = useRef<NodeJS.Timeout | null>(null);
   const supabase = createClient();
 
   useEffect(() => {
@@ -37,8 +38,8 @@ export default function SpectatorPage() {
 
   useEffect(() => {
     if (!tournamentId) return;
-    // ... (rest of data fetching logic)
 
+    console.log(`[REALTIME] Initializing subscriptions for tournament ${tournamentId}`);
     fetchInitialData();
 
     // Subscribe to rankings changes
@@ -52,11 +53,21 @@ export default function SpectatorPage() {
           table: 'rankings',
           filter: `tournament_id=eq.${tournamentId}`
         },
-        () => {
+        (payload) => {
+          console.log(`[REALTIME] Rankings change detected: ${payload.eventType}`);
           fetchRankings();
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          console.log('[REALTIME] Rankings subscription connected');
+        } else {
+          console.warn(`[REALTIME] Rankings subscription status: ${status}`);
+          if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+            console.error(`[ERROR] Rankings subscription failed: ${status}`);
+          }
+        }
+      });
 
     // Subscribe to matches changes
     const matchesChannel = supabase
@@ -70,38 +81,59 @@ export default function SpectatorPage() {
           filter: `tournament_id=eq.${tournamentId}`
         },
         (payload) => {
+          console.log(`[REALTIME] Match ${payload.eventType} received: match_id=${payload.new?.id || payload.old?.id}`, payload);
           handleMatchChange(payload);
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          console.log('[REALTIME] Matches subscription connected');
+        } else {
+          console.warn(`[REALTIME] Matches subscription status: ${status}`);
+          if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+            console.error(`[ERROR] Matches subscription failed: ${status}`);
+          }
+        }
+      });
 
     return () => {
+      console.log('[REALTIME] Cleaning up subscriptions');
       supabase.removeChannel(rankingsChannel);
       supabase.removeChannel(matchesChannel);
     };
   }, [tournamentId]);
 
   const fetchInitialData = async () => {
-    // Fetch Tournament
-    const { data: tData } = await supabase
-      .from('tournaments')
-      .select('*')
-      .eq('id', tournamentId)
-      .single();
-    setTournament(tData);
+    console.log('[REALTIME] Fetching initial tournament data');
+    try {
+      // Fetch Tournament
+      const { data: tData, error: tError } = await supabase
+        .from('tournaments')
+        .select('*')
+        .eq('id', tournamentId)
+        .single();
+      
+      if (tError) throw tError;
+      setTournament(tData);
 
-    // Fetch Teams
-    const { data: teamsData } = await supabase
-      .from('teams')
-      .select('*');
-    setTeams(teamsData || []);
+      // Fetch Teams
+      const { data: teamsData, error: teamsError } = await supabase
+        .from('teams')
+        .select('*');
+      
+      if (teamsError) throw teamsError;
+      setTeams(teamsData || []);
 
-    fetchRankings();
-    fetchMatches();
+      fetchRankings();
+      fetchMatches();
+    } catch (error: any) {
+      console.error(`[ERROR] Initial data fetch failed: ${error.message}`);
+    }
   };
 
   const fetchRankings = async () => {
-    const { data } = await supabase
+    console.log('[REALTIME] Fetching latest rankings data');
+    const { data, error } = await supabase
       .from('rankings')
       .select('*, teams(team_name)')
       .eq('tournament_id', tournamentId)
@@ -109,42 +141,94 @@ export default function SpectatorPage() {
       .order('ap', { ascending: false })
       .order('sp', { ascending: false });
     
+    if (error) {
+      console.error(`[ERROR] Rankings fetch failed: ${error.message}`, { tournamentId, timestamp: new Date().toISOString() });
+      return;
+    }
+    console.log('[REALTIME] Rankings data loaded successfully');
     setRankings(data || []);
   };
 
   const fetchMatches = async () => {
-    const { data } = await supabase
+    console.log('[REALTIME] Fetching latest match data');
+    const { data, error } = await supabase
       .from('matches')
       .select('*')
       .eq('tournament_id', tournamentId)
       .order('match_number', { ascending: true });
     
+    if (error) {
+      console.error(`[ERROR] Match fetch failed: ${error.message}`, { tournamentId, timestamp: new Date().toISOString() });
+      return;
+    }
+    console.log('[REALTIME] Match data loaded successfully');
     setMatches(data || []);
   };
 
   const handleMatchChange = (payload: any) => {
+    console.log(`[REALTIME_DEBUG] Event: ${payload.eventType}, Table: ${payload.table}`);
+    console.log(`[REALTIME_DEBUG] Payload New:`, payload.new);
+    console.log(`[REALTIME_DEBUG] Payload Old:`, payload.old);
+
+    // Rankings pattern: Always refetch to ensure absolute integrity
     fetchMatches();
     
-    // Check if a match was just completed
-    if (payload.eventType === 'UPDATE' && payload.new.status === 'Completed' && payload.old.status !== 'Completed') {
-      triggerTakeover(payload.new);
-    }
-    
-    // If a match is inserted as completed (e.g. bulk import)
-    if (payload.eventType === 'INSERT' && payload.new.status === 'Completed') {
-      triggerTakeover(payload.new);
+    const isAlreadyInQueue = (matchId: string) => {
+      const inQueue = resultQueue.some(m => m.id === matchId) || currentResult?.id === matchId;
+      console.log(`[REALTIME_DEBUG] Match ${matchId} in queue/active: ${inQueue}`);
+      return inQueue;
+    };
+
+    // Takeover logic
+    if (payload.eventType === 'UPDATE') {
+      const isCompleted = payload.new.status === 'Completed';
+      const wasNotCompleted = payload.old?.status !== 'Completed';
+      console.log(`[REALTIME_DEBUG] UPDATE Match ${payload.new.id}: status ${payload.old?.status} -> ${payload.new.status}. isCompleted: ${isCompleted}, wasNotCompleted: ${wasNotCompleted}`);
+      
+      if (isCompleted) {
+        if (!isAlreadyInQueue(payload.new.id)) {
+          console.log(`[RESULT_QUEUE] Adding match ${payload.new.id} to queue`);
+          setResultQueue(prev => [...prev, payload.new]);
+        }
+      }
+    } else if (payload.eventType === 'INSERT') {
+      const isCompleted = payload.new.status === 'Completed';
+      console.log(`[REALTIME_DEBUG] INSERT Match ${payload.new.id}: status ${payload.new.status}. isCompleted: ${isCompleted}`);
+      
+      if (isCompleted) {
+        if (!isAlreadyInQueue(payload.new.id)) {
+          console.log(`[RESULT_QUEUE] Adding match ${payload.new.id} to queue`);
+          setResultQueue(prev => [...prev, payload.new]);
+        }
+      }
     }
   };
 
-  const triggerTakeover = (match: any) => {
-    setLastMatchResult(match);
-    setShowTakeover(true);
-    
-    // Auto-hide after 20 seconds
-    setTimeout(() => {
-      setShowTakeover(false);
-    }, 20000);
-  };
+  // Queue Processing Logic
+  useEffect(() => {
+    if (resultQueue.length > 0 && !currentResult) {
+      const nextResult = resultQueue[0];
+      console.log(`[RESULT_SCREEN] Opening match result screen for match ${nextResult.id}`);
+      setCurrentResult(nextResult);
+      setResultQueue(prev => prev.slice(1));
+      
+      // Auto-hide after 10 seconds and return to spectator dashboard
+      resultTimerRef.current = setTimeout(() => {
+        console.log('[RESULT_SCREEN] 10s timer completed, closing takeover');
+        setCurrentResult(null);
+        resultTimerRef.current = null;
+        console.log('[RESULT_SCREEN] Returning to spectator dashboard');
+      }, 10000);
+      
+      console.log('[RESULT_SCREEN] Timer started (10s)');
+    }
+
+    return () => {
+      if (resultTimerRef.current) {
+        clearTimeout(resultTimerRef.current);
+      }
+    };
+  }, [resultQueue, currentResult]);
 
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
@@ -246,11 +330,12 @@ export default function SpectatorPage() {
         </footer>
 
         {/* Match Result Takeover Overlay */}
-        {showTakeover && lastMatchResult && (
+        {currentResult && (
           <MatchResultTakeover 
-            match={lastMatchResult} 
+            match={currentResult} 
             teams={teams} 
-            onClose={() => setShowTakeover(false)} 
+            tournamentName={tournament.name}
+            onClose={() => setCurrentResult(null)} 
           />
         )}
       </div>

@@ -235,3 +235,7 @@ $$ LANGUAGE plpgsql;
 
 -- Enable Realtime for rankings table
 ALTER PUBLICATION supabase_realtime ADD TABLE public.rankings;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.matches;
+
+-- Ensure full record is sent on update for Realtime
+ALTER TABLE public.matches REPLICA IDENTITY FULL;
