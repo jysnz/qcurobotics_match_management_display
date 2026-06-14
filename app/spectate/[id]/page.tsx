@@ -7,6 +7,7 @@ import RankingsTable from '@/components/RankingsTable';
 import MatchSchedule from '@/components/MatchSchedule';
 import MatchResultTakeover from '@/components/MatchResultTakeover';
 import TournamentBracket from '@/components/TournamentBracket';
+import TournamentWinnerTakeover from '@/components/TournamentWinnerTakeover';
 import { Maximize2, Minimize2, X } from 'lucide-react';
 
 interface Tournament {
@@ -94,6 +95,80 @@ export default function SpectatorPage() {
     const allQualsCompleted = qualMatches.every(m => m.status === 'Completed');
     return allQualsCompleted && hasElimMatches;
   }, [matches]);
+
+  // Finals phase logic
+  const isFinalsPhase = useMemo(() => {
+    const sfMatches = matches.filter(m => m.match_type === 'Semi-Final');
+    // If we have semi-finals and they are all completed, we are in the finals phase
+    return sfMatches.length > 0 && sfMatches.every(m => m.status === 'Completed');
+  }, [matches]);
+
+  const winnerTeam = useMemo(() => {
+    if (rankings.length === 0) return null;
+    const topRanking = rankings[0];
+    return teams.find(t => t.id === topRanking.team_id) || null;
+  }, [rankings, teams]);
+
+  const winnerStats = useMemo(() => {
+    if (rankings.length === 0 || !winnerTeam) return undefined;
+    const topRanking = rankings[0];
+    
+    // Find elimination matches for this team
+    const elimMatches = matches.filter(m => 
+      (m.match_type === 'Semi-Final' || m.match_type === 'Final') && 
+      (m.red_team_id === winnerTeam.id || m.blue_team_id === winnerTeam.id) &&
+      m.status === 'Completed'
+    );
+
+    let elimWins = 0;
+    let elimLosses = 0;
+    let elimTies = 0;
+
+    elimMatches.forEach(m => {
+      const isRed = m.red_team_id === winnerTeam.id;
+      const teamScore = isRed ? m.red_score : m.blue_score;
+      const oppScore = isRed ? m.blue_score : m.red_score;
+      
+      if (teamScore > oppScore) elimWins++;
+      else if (teamScore < oppScore) elimLosses++;
+      else elimTies++;
+    });
+
+    return {
+      wp: topRanking.wp,
+      ap: topRanking.ap,
+      sp: topRanking.sp,
+      wins: topRanking.wins + elimWins,
+      losses: topRanking.losses + elimLosses,
+      ties: topRanking.ties + elimTies
+    };
+  }, [rankings, winnerTeam, matches]);
+
+  const isTournamentCompleted = tournament?.status === 'Completed';
+
+  // Calculate series score for current takeover match if it's a Final
+  const isChampionshipClencher = useMemo(() => {
+    if (!currentResult || currentResult.match_type !== 'Final') return false;
+    
+    // We need to check if the winner of THIS match has reached 2 wins
+    const winner = currentResult.red_score > currentResult.blue_score ? 'Red' : 
+                   currentResult.blue_score > currentResult.red_score ? 'Blue' : null;
+    
+    if (!winner) return false;
+
+    // Filter matches leading up to AND including this one
+    // Note: matches state is already updated via handles
+    const completedFinals = matches.filter(m => m.match_type === 'Final' && m.status === 'Completed');
+    let redWins = 0;
+    let blueWins = 0;
+
+    completedFinals.forEach(m => {
+      if (m.red_score > m.blue_score) redWins++;
+      else if (m.blue_score > m.red_score) blueWins++;
+    });
+
+    return (winner === 'Red' && redWins >= 2) || (winner === 'Blue' && blueWins >= 2);
+  }, [currentResult, matches]);
 
   // Sync refs with state
   useEffect(() => {
@@ -449,7 +524,11 @@ export default function SpectatorPage() {
           {/* Left Panel: Rankings or Bracket (1320px) */}
           <div className="w-[1320px] h-full flex flex-col relative shrink-0">
             <div className="flex-1 overflow-hidden relative z-10">
-              {isEliminationPhase ? (
+              {isTournamentCompleted ? (
+                <div className="w-full h-full bg-[#F8FAFC] flex items-center justify-center">
+                   {/* Background stays light mode clean while takeover is active or featured */}
+                </div>
+              ) : isEliminationPhase ? (
                 <TournamentBracket matches={matches} teams={teams} rankings={rankings} />
               ) : (
                 <RankingsTable rankings={rankings} />
@@ -463,6 +542,7 @@ export default function SpectatorPage() {
               matches={matches} 
               teams={teams} 
               isEliminationPhase={isEliminationPhase} 
+              isFinalsPhase={isFinalsPhase}
             />
           </div>
         </div>
@@ -489,7 +569,18 @@ export default function SpectatorPage() {
             teams={teams} 
             rankings={rankings}
             tournamentName={tournament.name}
+            isChampionshipClencher={isChampionshipClencher}
             onClose={() => setCurrentResult(null)} 
+          />
+        )}
+
+        {/* Tournament Winner Takeover Overlay */}
+        {isTournamentCompleted && winnerTeam && (
+          <TournamentWinnerTakeover 
+            tournamentName={tournament.name}
+            winnerTeam={winnerTeam}
+            winnerRank={1}
+            stats={winnerStats}
           />
         )}
       </div>

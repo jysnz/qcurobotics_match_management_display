@@ -23,9 +23,10 @@ interface MatchScheduleProps {
   matches: Match[];
   teams: Team[];
   isEliminationPhase?: boolean;
+  isFinalsPhase?: boolean;
 }
 
-export default function MatchSchedule({ matches, teams, isEliminationPhase = false }: MatchScheduleProps) {
+export default function MatchSchedule({ matches, teams, isEliminationPhase = false, isFinalsPhase = false }: MatchScheduleProps) {
   const [logos, setLogos] = useState<string[]>([]);
 
   useEffect(() => {
@@ -63,12 +64,16 @@ export default function MatchSchedule({ matches, teams, isEliminationPhase = fal
   const recentResults = useMemo(() => {
     let filtered = matches.filter(m => m.status === 'Completed');
     
-    if (isEliminationPhase) {
+    if (isFinalsPhase) {
+      // Once in finals, only show finals results to keep focus on championship
+      filtered = filtered.filter(m => m.match_type === 'Final');
+    } else if (isEliminationPhase) {
+      // In elimination phase (semis), hide qualifications
       filtered = filtered.filter(m => m.match_type !== 'Qualification');
     }
     
     return filtered.sort((a, b) => b.match_number - a.match_number);
-  }, [matches, isEliminationPhase]);
+  }, [matches, isEliminationPhase, isFinalsPhase]);
 
   // Scrolling logic variables
   const shouldScrollResults = recentResults.length > 4;
@@ -125,8 +130,10 @@ export default function MatchSchedule({ matches, teams, isEliminationPhase = fal
                   <div style={{ height: '16px' }} className="bg-white shrink-0" aria-hidden="true" />
                 </div>
               )) : (
-                <div className="flex flex-col items-center justify-start min-h-full py-4">
-                  {recentResults.map((match, index) => renderMatchRow(match, index, true))}
+                <div className="flex flex-col items-center justify-center h-full py-4">
+                  <div className="w-full">
+                    {recentResults.map((match, index) => renderMatchRow(match, index, true))}
+                  </div>
                 </div>
               )}
             </Ticker>
@@ -157,8 +164,10 @@ export default function MatchSchedule({ matches, teams, isEliminationPhase = fal
                   <div style={{ height: '16px' }} className="bg-white shrink-0" aria-hidden="true" />
                 </div>
               )) : (
-                <div className="flex flex-col items-center justify-start min-h-full py-4">
-                  {upcomingMatches.map((match, index) => renderMatchRow(match, index, false))}
+                <div className="flex flex-col items-center justify-center h-full py-4">
+                  <div className="w-full">
+                    {upcomingMatches.map((match, index) => renderMatchRow(match, index, false))}
+                  </div>
                 </div>
               )}
             </Ticker>

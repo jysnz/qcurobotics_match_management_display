@@ -42,10 +42,17 @@ interface MatchResultTakeoverProps {
   teams: Team[];
   rankings: Ranking[];
   tournamentName: string;
+  isChampionshipClencher?: boolean;
   onClose?: () => void;
 }
 
-export default function MatchResultTakeover({ match, teams, rankings, tournamentName }: MatchResultTakeoverProps) {
+export default function MatchResultTakeover({ 
+  match, 
+  teams, 
+  rankings, 
+  tournamentName,
+  isChampionshipClencher = false 
+}: MatchResultTakeoverProps) {
   const [visible, setVisible] = useState(false);
   const [mounted, setMounted] = useState(false);
 
@@ -156,7 +163,11 @@ export default function MatchResultTakeover({ match, teams, rankings, tournament
             {/* Winner Announcement below Stats */}
             <div className={`mt-10 text-center transition-all duration-1000 delay-1000 ${visible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}>
                <div className="text-4xl md:text-5xl font-black uppercase text-white tracking-tighter drop-shadow-2xl">
-                 {winner === 'TIE' ? "MATCH IS A TIE!" : `${winner} ALLIANCE WINS!`}
+                 {isChampionshipClencher && winner !== 'TIE' ? (
+                   `${winner === 'RED' ? redTeam.team_name : blueTeam.team_name} WINS THE TOURNAMENT!`
+                 ) : (
+                   winner === 'TIE' ? "MATCH IS A TIE!" : `${winner} ALLIANCE WINS!`
+                 )}
                </div>
             </div>
           </div>
