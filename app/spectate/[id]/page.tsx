@@ -45,19 +45,21 @@ interface Match {
   red_team_id: number;
   blue_team_id: number;
   // VEX specific fields used in takeover
-  red_blocks?: number;
-  blue_blocks?: number;
-  red_long_goals?: number;
-  blue_long_goals?: number;
-  red_upper_goals?: number;
-  blue_upper_goals?: number;
-  red_lower_goals?: number;
-  blue_lower_goals?: number;
-  red_parked?: number;
-  blue_parked?: number;
-  autonomous_winner?: 'Red' | 'Blue' | 'Tie';
+  red_blocks_scored?: number;
+  blue_blocks_scored?: number;
+  red_long_goals_controlled?: number;
+  blue_long_goals_controlled?: number;
+  red_upper_goals_controlled?: number;
+  blue_upper_goals_controlled?: number;
+  red_lower_goals_controlled?: number;
+  blue_lower_goals_controlled?: number;
+  red_parked_robots?: number;
+  blue_parked_robots?: number;
+  autonomous_bonus?: 'Red' | 'Blue' | 'None';
   red_awp?: boolean;
   blue_awp?: boolean;
+  red_disqualified?: boolean;
+  blue_disqualified?: boolean;
 }
 
 export default function SpectatorPage() {

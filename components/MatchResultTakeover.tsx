@@ -20,19 +20,21 @@ interface Match {
   blue_score: number;
   red_team_id: number;
   blue_team_id: number;
-  red_blocks?: number;
-  blue_blocks?: number;
-  red_long_goals?: number;
-  blue_long_goals?: number;
-  red_upper_goals?: number;
-  blue_upper_goals?: number;
-  red_lower_goals?: number;
-  blue_lower_goals?: number;
-  red_parked?: number;
-  blue_parked?: number;
-  autonomous_winner?: 'Red' | 'Blue' | 'Tie';
+  red_blocks_scored?: number;
+  blue_blocks_scored?: number;
+  red_long_goals_controlled?: number;
+  blue_long_goals_controlled?: number;
+  red_upper_goals_controlled?: number;
+  blue_upper_goals_controlled?: number;
+  red_lower_goals_controlled?: number;
+  blue_lower_goals_controlled?: number;
+  red_parked_robots?: number;
+  blue_parked_robots?: number;
+  autonomous_bonus?: 'Red' | 'Blue' | 'None';
   red_awp?: boolean;
   blue_awp?: boolean;
+  red_disqualified?: boolean;
+  blue_disqualified?: boolean;
 }
 
 interface MatchResultTakeoverProps {
@@ -84,12 +86,12 @@ export default function MatchResultTakeover({ match, teams, rankings, tournament
 
   // VEX Official Score Breakdown Rows
   const statsRows = [
-    { label: 'Blocks Scored', red: match.red_blocks || 0, blue: match.blue_blocks || 0 },
-    { label: 'Long Goals Controlled', red: match.red_long_goals || 0, blue: match.blue_long_goals || 0 },
-    { label: 'Upper Goal Controlled', red: match.red_upper_goals || 0, blue: match.blue_upper_goals || 0 },
-    { label: 'Lower Goal Controlled', red: match.red_lower_goals || 0, blue: match.blue_lower_goals || 0 },
-    { label: 'Parked Robots', red: match.red_parked || 0, blue: match.blue_parked || 0 },
-    { label: 'Autonomous Bonus', red: match.autonomous_winner === 'Red' ? '6' : '0', blue: match.autonomous_winner === 'Blue' ? '6' : '0' },
+    { label: 'Blocks Scored', red: match.red_blocks_scored || 0, blue: match.blue_blocks_scored || 0 },
+    { label: 'Long Goals Controlled', red: match.red_long_goals_controlled || 0, blue: match.blue_long_goals_controlled || 0 },
+    { label: 'Upper Goal Controlled', red: match.red_upper_goals_controlled || 0, blue: match.blue_upper_goals_controlled || 0 },
+    { label: 'Lower Goal Controlled', red: match.red_lower_goals_controlled || 0, blue: match.blue_lower_goals_controlled || 0 },
+    { label: 'Parked Robots', red: match.red_parked_robots || 0, blue: match.blue_parked_robots || 0 },
+    { label: 'Autonomous Bonus', red: match.autonomous_bonus === 'Red' ? '10' : '0', blue: match.autonomous_bonus === 'Blue' ? '10' : '0' },
     { label: 'Autonomous Win Point', red: match.red_awp ? '1' : '0', blue: match.blue_awp ? '1' : '0' },
   ];
 
@@ -182,8 +184,15 @@ export default function MatchResultTakeover({ match, teams, rankings, tournament
         >
           <div className="flex items-center gap-12">
             <div className="flex flex-col items-center relative">
-              <div className="absolute -top-10 bg-white text-[#e21e26] px-4 py-1 font-black text-lg skew-x-[-15deg] shadow-lg">
-                <span className="skew-x-[15deg] inline-block">RANK #{redRank}</span>
+              <div className="absolute -top-12 flex flex-col items-center gap-2">
+                <div className="bg-white text-[#e21e26] px-4 py-1 font-black text-lg skew-x-[-15deg] shadow-lg">
+                  <span className="skew-x-[15deg] inline-block">RANK #{redRank}</span>
+                </div>
+                {match.red_disqualified && (
+                  <div className="bg-white text-[#e21e26] px-3 py-0.5 font-black text-xl skew-x-[-15deg] shadow-lg border-2 border-[#e21e26] z-20">
+                    <span className="skew-x-[15deg] inline-block">DQ</span>
+                  </div>
+                )}
               </div>
               <span className="text-9xl font-black text-white leading-none drop-shadow-2xl">{redTeam.team_id}</span>
             </div>
@@ -210,8 +219,15 @@ export default function MatchResultTakeover({ match, teams, rankings, tournament
             </div>
             <div className="h-16 w-2 bg-white/30 skew-x-[-15deg]" />
             <div className="flex flex-col items-center relative">
-              <div className="absolute -top-10 bg-white text-[#005da1] px-4 py-1 font-black text-lg skew-x-[-15deg] shadow-lg">
-                <span className="skew-x-[15deg] inline-block">RANK #{blueRank}</span>
+              <div className="absolute -top-12 flex flex-col items-center gap-2">
+                <div className="bg-white text-[#005da1] px-4 py-1 font-black text-lg skew-x-[-15deg] shadow-lg">
+                  <span className="skew-x-[15deg] inline-block">RANK #{blueRank}</span>
+                </div>
+                {match.blue_disqualified && (
+                  <div className="bg-white text-[#005da1] px-3 py-0.5 font-black text-xl skew-x-[-15deg] shadow-lg border-2 border-[#005da1] z-20">
+                    <span className="skew-x-[15deg] inline-block">DQ</span>
+                  </div>
+                )}
               </div>
               <span className="text-9xl font-black text-white leading-none drop-shadow-2xl">{blueTeam.team_id}</span>
             </div>
