@@ -86,6 +86,7 @@ export default function TournamentBracket({ matches, teams, rankings = [] }: Tou
     const isRedWinner = match?.status === 'Completed' && match.red_score > match.blue_score;
     const isBlueWinner = match?.status === 'Completed' && match.blue_score > match.red_score;
     const isNextMatch = match?.id === nextMatchId;
+    const isPending = match?.status === 'Pending';
 
     return (
       <div className={`flex flex-col ${isLarge ? 'w-[520px]' : 'w-[420px]'} group relative`}>
@@ -103,8 +104,13 @@ export default function TournamentBracket({ matches, teams, rankings = [] }: Tou
                 Live
               </div>
             ) : isNextMatch ? (
-              <span className="text-[10px] font-black text-amber-600 uppercase tracking-widest animate-pulse">Up Next</span>
-            ) : null}
+              <div className="flex items-center gap-1.5 px-2 py-0.5 bg-blue-50 text-blue-600 rounded text-[10px] font-black uppercase tracking-widest border border-blue-100 animate-pulse">
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                Ready
+              </div>
+            ) : (
+              <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Scheduled</span>
+            )}
           </div>
           {match?.status === 'Completed' && (
             <div className="flex items-center gap-1 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
@@ -115,11 +121,18 @@ export default function TournamentBracket({ matches, teams, rankings = [] }: Tou
         </div>
 
         {/* Card Body */}
-        <div className={`relative bg-white border-2 transition-all duration-500 rounded-2xl overflow-hidden shadow-[0_15px_40px_rgba(0,0,0,0.04)] ${
-          isNextMatch ? 'border-amber-500 ring-8 ring-amber-500/5 z-20 scale-[1.02]' :
-          isLarge ? 'border-amber-200' : 'border-slate-100'
+        <div className={`relative bg-white border-2 transition-all duration-500 rounded-2xl overflow-hidden ${
+          isNextMatch ? 'border-blue-500 shadow-[0_25px_60px_rgba(59,130,246,0.12)] z-20 scale-[1.02]' :
+          isLarge ? 'border-amber-200 shadow-[0_15px_40px_rgba(0,0,0,0.04)]' : 'border-slate-100 shadow-[0_15px_40px_rgba(0,0,0,0.04)]'
         } ${match?.status === 'Ongoing' ? 'ring-4 ring-emerald-500/5 border-emerald-400/50' : ''}`}>
           
+          {/* VS Center Badge for Pending matches */}
+          {isPending && !isLarge && (
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 bg-white border border-slate-100 rounded-lg flex items-center justify-center z-20 shadow-sm group-hover:scale-110 transition-transform">
+              <span className="text-[10px] font-black text-slate-400 italic tracking-tighter">VS</span>
+            </div>
+          )}
+
           {/* Winner Glow Layer */}
           <div className={`absolute inset-0 transition-opacity duration-1000 pointer-events-none ${
             isRedWinner ? 'bg-gradient-to-r from-red-50/50 to-transparent' : 
@@ -142,7 +155,7 @@ export default function TournamentBracket({ matches, teams, rankings = [] }: Tou
                   <span className={`text-xl font-bold uppercase tracking-tight truncate transition-colors duration-500 ${
                     isRedWinner ? 'text-slate-900' : 
                     isBlueWinner ? 'text-slate-300' : 
-                    (match?.status === 'Pending' && !isNextMatch) ? 'text-slate-300' : 'text-slate-700'
+                    (isPending && !isNextMatch) ? 'text-slate-300' : 'text-slate-700'
                   }`}>
                     {displayRed}
                   </span>
@@ -153,7 +166,7 @@ export default function TournamentBracket({ matches, teams, rankings = [] }: Tou
             
             <div className={`w-16 h-12 flex items-center justify-center rounded-xl transition-all duration-500 ${
               isRedWinner ? 'bg-red-600 text-white shadow-lg shadow-red-200' : 
-              redScore !== null ? 'bg-slate-900 text-white' : 'bg-slate-50 text-slate-200'
+              redScore !== null ? 'bg-slate-900 text-white' : 'bg-slate-50 text-slate-200 border border-slate-100'
             }`}>
               <span className="text-3xl font-black tabular-nums tracking-tighter">
                 {redScore ?? '--'}
@@ -177,7 +190,7 @@ export default function TournamentBracket({ matches, teams, rankings = [] }: Tou
                   <span className={`text-xl font-bold uppercase tracking-tight truncate transition-colors duration-500 ${
                     isBlueWinner ? 'text-slate-900' : 
                     isRedWinner ? 'text-slate-300' : 
-                    (match?.status === 'Pending' && !isNextMatch) ? 'text-slate-300' : 'text-slate-700'
+                    (isPending && !isNextMatch) ? 'text-slate-300' : 'text-slate-700'
                   }`}>
                     {displayBlue}
                   </span>
@@ -188,7 +201,7 @@ export default function TournamentBracket({ matches, teams, rankings = [] }: Tou
 
             <div className={`w-16 h-12 flex items-center justify-center rounded-xl transition-all duration-500 ${
               isBlueWinner ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' : 
-              blueScore !== null ? 'bg-slate-900 text-white' : 'bg-slate-50 text-slate-200'
+              blueScore !== null ? 'bg-slate-900 text-white' : 'bg-slate-50 text-slate-200 border border-slate-100'
             }`}>
               <span className="text-3xl font-black tabular-nums tracking-tighter">
                 {blueScore ?? '--'}
