@@ -275,10 +275,10 @@ export default function SpectatorPage() {
           }
         )
         .subscribe(async (status) => {
-          console.log(`[REALTIME] Subscription status for ${tournamentId}: ${status}`);
+          // Use console.log instead of error for status changes to keep console clean
+          console.log(`[REALTIME] Status: ${status}`);
           
           if (status === 'SUBSCRIBED') {
-            console.log('[REALTIME] Connection established successfully');
             retryCount = 0; 
             if (retryTimerRef.current) {
               clearTimeout(retryTimerRef.current);
@@ -286,22 +286,26 @@ export default function SpectatorPage() {
             }
           } 
           
-          // Only retry on unexpected errors or timeouts, not on explicit CLOSURE unless it's an error
           if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-            console.error(`[REALTIME_ERROR] Connection issue: ${status}. Attempting recovery...`);
-            
-            if (retryCount < maxRetries && !retryTimerRef.current) {
-              retryCount++;
-              const delay = Math.min(1000 * Math.pow(2, retryCount), 30000); 
-              console.log(`[REALTIME] Retrying connection in ${delay}ms (Attempt ${retryCount}/${maxRetries})`);
-              
-              retryTimerRef.current = setTimeout(() => {
+            // Only attempt recovery if the page is actually visible (not sleeping)
+            if (document.visibilityState === 'visible') {
+              if (retryCount < maxRetries && !retryTimerRef.current) {
+                retryCount++;
+                const delay = Math.min(1000 * Math.pow(2, retryCount), 30000); 
+                console.log(`[REALTIME] Reconnecting in ${delay}ms...`);
+                
+                retryTimerRef.current = setTimeout(() => {
+                  retryTimerRef.current = null;
+                  fetchInitialData();
+                  setupSubscription();
+                }, delay);
+              }
+            } else {
+              // If page is hidden (lid closed), just clear everything and wait for visibilitychange
+              if (retryTimerRef.current) {
+                clearTimeout(retryTimerRef.current);
                 retryTimerRef.current = null;
-                fetchInitialData();
-                setupSubscription();
-              }, delay);
-            } else if (retryCount >= maxRetries) {
-              console.error('[REALTIME_FATAL] Maximum reconnection attempts reached.');
+              }
             }
           }
         });
@@ -309,15 +313,28 @@ export default function SpectatorPage() {
 
     setupSubscription();
 
+    // Listen for wake-up/tab return
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        console.log('[REALTIME] Page visible: Resyncing data and restoring connection');
+        fetchInitialData();
+        setupSubscription();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
     // Fallback periodic refresh
     const heartbeatInterval = setInterval(() => {
-      console.log('[REALTIME] Heartbeat: Performing periodic data refresh');
-      fetchRankings();
-      fetchMatches();
+      if (document.visibilityState === 'visible') {
+        console.log('[REALTIME] Heartbeat refresh');
+        fetchRankings();
+        fetchMatches();
+      }
     }, 300000); 
 
     return () => {
-      console.log('[REALTIME] Cleaning up robust subscriptions');
+      console.log('[REALTIME] Cleaning up subscriptions');
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
       if (retryTimerRef.current) {
         clearTimeout(retryTimerRef.current);
       }
