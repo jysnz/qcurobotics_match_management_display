@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase-browser';
 import RankingsTable from '@/components/RankingsTable';
 import MatchSchedule from '@/components/MatchSchedule';
 import MatchResultTakeover from '@/components/MatchResultTakeover';
+import TournamentBracket from '@/components/TournamentBracket';
 import { Maximize2, Minimize2, X } from 'lucide-react';
 
 interface Tournament {
@@ -78,6 +79,21 @@ export default function SpectatorPage() {
   // Refs to avoid stale closures in real-time handlers
   const resultQueueRef = useRef<Match[]>([]);
   const currentResultRef = useRef<Match | null>(null);
+
+  // Elimination phase logic
+  const isEliminationPhase = useMemo(() => {
+    if (matches.length === 0) return false;
+    
+    const hasElimMatches = matches.some(m => m.match_type === 'Semi-Final' || m.match_type === 'Final');
+    const qualMatches = matches.filter(m => m.match_type === 'Qualification');
+    
+    // If there are no qualifications, but there are elims, it's elim phase
+    if (qualMatches.length === 0) return hasElimMatches;
+    
+    // If all qualifications are completed and there are elim matches
+    const allQualsCompleted = qualMatches.every(m => m.status === 'Completed');
+    return allQualsCompleted && hasElimMatches;
+  }, [matches]);
 
   // Sync refs with state
   useEffect(() => {
@@ -340,7 +356,7 @@ export default function SpectatorPage() {
         <header className="h-[80px] bg-black flex items-center justify-between px-10 border-b border-white/10 shrink-0">
           <div className="flex items-center gap-8">
             <h1 className="text-5xl font-black tracking-tighter uppercase italic">
-              RANKINGS
+              {isEliminationPhase ? 'BRACKET' : 'RANKINGS'}
             </h1>
             <div className="h-10 w-1 bg-white/20" />
             <div className="flex flex-col justify-center">
@@ -379,16 +395,24 @@ export default function SpectatorPage() {
         </header>
 
         <div className="flex-1 flex w-full overflow-hidden">
-          {/* Left Panel: Rankings (1320px) */}
+          {/* Left Panel: Rankings or Bracket (1320px) */}
           <div className="w-[1320px] h-full flex flex-col relative shrink-0">
             <div className="flex-1 overflow-hidden relative z-10">
-              <RankingsTable rankings={rankings} />
+              {isEliminationPhase ? (
+                <TournamentBracket matches={matches} teams={teams} />
+              ) : (
+                <RankingsTable rankings={rankings} />
+              )}
             </div>
           </div>
 
           {/* Right Panel: Matches (600px) */}
           <div className="w-[600px] h-full flex flex-col border-l border-white/10 shrink-0">
-            <MatchSchedule matches={matches} teams={teams} />
+            <MatchSchedule 
+              matches={matches} 
+              teams={teams} 
+              isEliminationPhase={isEliminationPhase} 
+            />
           </div>
         </div>
 

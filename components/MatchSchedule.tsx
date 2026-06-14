@@ -22,9 +22,10 @@ interface Team {
 interface MatchScheduleProps {
   matches: Match[];
   teams: Team[];
+  isEliminationPhase?: boolean;
 }
 
-export default function MatchSchedule({ matches, teams }: MatchScheduleProps) {
+export default function MatchSchedule({ matches, teams, isEliminationPhase = false }: MatchScheduleProps) {
   const [logos, setLogos] = useState<string[]>([]);
 
   useEffect(() => {
@@ -60,10 +61,14 @@ export default function MatchSchedule({ matches, teams }: MatchScheduleProps) {
   }, [matches]);
 
   const recentResults = useMemo(() => {
-    return matches
-      .filter(m => m.status === 'Completed')
-      .sort((a, b) => b.match_number - a.match_number);
-  }, [matches]);
+    let filtered = matches.filter(m => m.status === 'Completed');
+    
+    if (isEliminationPhase) {
+      filtered = filtered.filter(m => m.match_type !== 'Qualification');
+    }
+    
+    return filtered.sort((a, b) => b.match_number - a.match_number);
+  }, [matches, isEliminationPhase]);
 
   return (
     <div className="h-full flex flex-col overflow-hidden bg-white">
