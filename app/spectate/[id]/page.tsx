@@ -229,70 +229,94 @@ export default function SpectatorPage() {
   useEffect(() => {
     if (!tournamentId) return;
 
-    console.log(`[REALTIME] Initializing subscriptions for tournament ${tournamentId}`);
+    console.log(`[REALTIME] Initializing robust subscription for tournament ${tournamentId}`);
     fetchInitialData();
 
-    // Subscribe to rankings changes
-    const rankingsChannel = supabase
-      .channel(`rankings_${tournamentId}`)
-      .on(
-        'postgres_changes',
-        { 
-          event: '*', 
-          schema: 'public', 
-          table: 'rankings',
-          filter: `tournament_id=eq.${tournamentId}`
-        },
-        (payload) => {
-          console.log(`[REALTIME] Rankings change detected: ${payload.eventType}`);
-          fetchRankings();
-        }
-      )
-      .subscribe((status) => {
-        if (status === 'SUBSCRIBED') {
-          console.log('[REALTIME] Rankings subscription connected');
-        } else {
-          console.warn(`[REALTIME] Rankings subscription status: ${status}`);
-          if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-            console.error(`[ERROR] Rankings subscription failed: ${status}`);
-          }
-        }
-      });
+    let retryCount = 0;
+    const maxRetries = 5;
+    let mainChannel: any = null;
 
-    // Subscribe to matches changes
-    const matchesChannel = supabase
-      .channel(`matches_${tournamentId}`)
-      .on(
-        'postgres_changes',
-        { 
-          event: '*', 
-          schema: 'public', 
-          table: 'matches',
-          filter: `tournament_id=eq.${tournamentId}`
-        },
-        (payload) => {
-          const matchId = (payload.new as any)?.id || (payload.old as any)?.id;
-          console.log(`[REALTIME] Match ${payload.eventType} received: match_id=${matchId}`, payload);
-          handleMatchChange(payload);
-        }
-      )
-      .subscribe((status) => {
-        if (status === 'SUBSCRIBED') {
-          console.log('[REALTIME] Matches subscription connected');
-        } else {
-          console.warn(`[REALTIME] Matches subscription status: ${status}`);
-          if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-            console.error(`[ERROR] Matches subscription failed: ${status}`);
+    const setupSubscription = () => {
+      // Cleanup existing channel if any
+      if (mainChannel) {
+        supabase.removeChannel(mainChannel);
+      }
+
+      // Consolidate into a single channel for better stability and lower overhead
+      mainChannel = supabase
+        .channel(`tournament_display_${tournamentId}`)
+        .on(
+          'postgres_changes',
+          { 
+            event: '*', 
+            schema: 'public', 
+            table: 'rankings',
+            filter: `tournament_id=eq.${tournamentId}`
+          },
+          (payload) => {
+            console.log(`[REALTIME] Rankings change detected: ${payload.eventType}`);
+            fetchRankings();
           }
-        }
-      });
+        )
+        .on(
+          'postgres_changes',
+          { 
+            event: '*', 
+            schema: 'public', 
+            table: 'matches',
+            filter: `tournament_id=eq.${tournamentId}`
+          },
+          (payload) => {
+            const matchId = (payload.new as any)?.id || (payload.old as any)?.id;
+            console.log(`[REALTIME] Match ${payload.eventType} received: match_id=${matchId}`);
+            handleMatchChange(payload);
+          }
+        )
+        .subscribe(async (status) => {
+          console.log(`[REALTIME] Subscription status for ${tournamentId}: ${status}`);
+          
+          if (status === 'SUBSCRIBED') {
+            console.log('[REALTIME] Connection established successfully');
+            retryCount = 0; // Reset retries on success
+          } 
+          
+          if (status === 'CHANNEL_ERROR' || status === 'CLOSED' || status === 'TIMED_OUT') {
+            console.error(`[REALTIME_ERROR] Connection issue: ${status}. Attempting recovery...`);
+            
+            if (retryCount < maxRetries) {
+              retryCount++;
+              const delay = Math.min(1000 * Math.pow(2, retryCount), 30000); // Exponential backoff
+              console.log(`[REALTIME] Retrying connection in ${delay}ms (Attempt ${retryCount}/${maxRetries})`);
+              
+              setTimeout(() => {
+                // Refetch all data to ensure we didn't miss anything during downtime
+                fetchInitialData();
+                setupSubscription();
+              }, delay);
+            } else {
+              console.error('[REALTIME_FATAL] Maximum reconnection attempts reached. Please refresh the page.');
+            }
+          }
+        });
+    };
+
+    setupSubscription();
+
+    // Fallback periodic refresh (every 5 minutes) to ensure data stays fresh even if Realtime fails silently
+    const heartbeatInterval = setInterval(() => {
+      console.log('[REALTIME] Heartbeat: Performing periodic data refresh');
+      fetchRankings();
+      fetchMatches();
+    }, 300000); 
 
     return () => {
-      console.log('[REALTIME] Cleaning up subscriptions');
-      supabase.removeChannel(rankingsChannel);
-      supabase.removeChannel(matchesChannel);
+      console.log('[REALTIME] Cleaning up robust subscriptions');
+      if (mainChannel) {
+        supabase.removeChannel(mainChannel);
+      }
+      clearInterval(heartbeatInterval);
     };
-  }, [tournamentId, supabase, fetchInitialData, fetchRankings, handleMatchChange]);
+    }, [tournamentId, supabase, fetchInitialData, fetchRankings, fetchMatches, handleMatchChange]);
 
   // Effect 1: Queue Processing (Watch queue, set active result)
   useEffect(() => {

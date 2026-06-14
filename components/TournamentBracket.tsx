@@ -45,6 +45,11 @@ export default function TournamentBracket({ matches, teams }: TournamentBracketP
   const winnerSF2 = getWinnerId(sf2);
   const championId = getWinnerId(final);
 
+  const isRedWinnerSF1 = sf1?.status === 'Completed' && sf1.red_score > sf1.blue_score;
+  const isBlueWinnerSF1 = sf1?.status === 'Completed' && sf1.blue_score > sf1.red_score;
+  const isRedWinnerSF2 = sf2?.status === 'Completed' && sf2.red_score > sf2.blue_score;
+  const isBlueWinnerSF2 = sf2?.status === 'Completed' && sf2.blue_score > sf2.red_score;
+
   // Identify the "Next Up" match
   const nextMatchId = useMemo(() => {
     if (sf1?.status === 'Pending') return sf1.id;
@@ -111,7 +116,9 @@ export default function TournamentBracket({ matches, teams }: TournamentBracketP
               }`} />
               <div className="flex flex-col min-w-0">
                 <span className={`text-2xl font-black uppercase tracking-tight truncate transition-colors duration-500 ${
-                  isRedWinner ? 'text-white' : (match?.status === 'Pending' && !isNextMatch) ? 'text-zinc-600' : 'text-zinc-300'
+                  isRedWinner ? 'text-white' : 
+                  isBlueWinner ? 'text-zinc-600 opacity-50' : 
+                  (match?.status === 'Pending' && !isNextMatch) ? 'text-zinc-600' : 'text-zinc-300'
                 }`}>
                   {displayRed}
                 </span>
@@ -119,7 +126,9 @@ export default function TournamentBracket({ matches, teams }: TournamentBracketP
               </div>
             </div>
             <div className={`text-4xl font-black tabular-nums tracking-tighter ml-4 transition-colors duration-500 ${
-              isRedWinner ? 'text-red-500' : redScore !== null ? 'text-white' : 'text-zinc-800'
+              isRedWinner ? 'text-red-500' : 
+              isBlueWinner ? 'text-zinc-800' : 
+              redScore !== null ? 'text-white' : 'text-zinc-800'
             }`}>
               {redScore ?? '--'}
             </div>
@@ -133,7 +142,9 @@ export default function TournamentBracket({ matches, teams }: TournamentBracketP
               }`} />
               <div className="flex flex-col min-w-0">
                 <span className={`text-2xl font-black uppercase tracking-tight truncate transition-colors duration-500 ${
-                  isBlueWinner ? 'text-white' : (match?.status === 'Pending' && !isNextMatch) ? 'text-zinc-600' : 'text-zinc-300'
+                  isBlueWinner ? 'text-white' : 
+                  isRedWinner ? 'text-zinc-600 opacity-50' : 
+                  (match?.status === 'Pending' && !isNextMatch) ? 'text-zinc-600' : 'text-zinc-300'
                 }`}>
                   {displayBlue}
                 </span>
@@ -141,7 +152,9 @@ export default function TournamentBracket({ matches, teams }: TournamentBracketP
               </div>
             </div>
             <div className={`text-4xl font-black tabular-nums tracking-tighter ml-4 transition-colors duration-500 ${
-              isBlueWinner ? 'text-blue-500' : blueScore !== null ? 'text-white' : 'text-zinc-800'
+              isBlueWinner ? 'text-blue-500' : 
+              isRedWinner ? 'text-zinc-800' : 
+              blueScore !== null ? 'text-white' : 'text-zinc-800'
             }`}>
               {blueScore ?? '--'}
             </div>
@@ -191,11 +204,14 @@ export default function TournamentBracket({ matches, teams }: TournamentBracketP
                 </filter>
               </defs>
               
-              {/* Connector Paths - Relative to the 128px gap and 600px height */}
-              {/* SF1 center is roughly at 145px, SF2 at 455px (approx) */}
-              {/* Finals center is at 300px, ports at ~250px and ~350px */}
+              {/* Connector Paths - Dynamic alignment logic */}
+              {/* Y coordinates: 
+                  Gap SF1: 145, Red SF1: 110, Blue SF1: 180
+                  Gap SF2: 455, Red SF2: 420, Blue SF2: 490
+                  Finals Red Port: 250, Finals Blue Port: 350
+              */}
               <path 
-                d="M 0 145 L 64 145 L 64 250 L 128 250" 
+                d={`M 0 ${isRedWinnerSF1 ? '110' : isBlueWinnerSF1 ? '180' : '145'} L 64 ${isRedWinnerSF1 ? '110' : isBlueWinnerSF1 ? '180' : '145'} L 64 250 L 128 250`} 
                 fill="none" 
                 stroke="url(#lineGrad)" 
                 strokeWidth="2"
@@ -204,7 +220,7 @@ export default function TournamentBracket({ matches, teams }: TournamentBracketP
                 style={{ stroke: winnerSF1 ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.1)' }}
               />
               <path 
-                d="M 0 455 L 64 455 L 64 350 L 128 350" 
+                d={`M 0 ${isRedWinnerSF2 ? '420' : isBlueWinnerSF2 ? '490' : '455'} L 64 ${isRedWinnerSF2 ? '420' : isBlueWinnerSF2 ? '490' : '455'} L 64 350 L 128 350`} 
                 fill="none" 
                 stroke="url(#lineGrad)" 
                 strokeWidth="2"
@@ -253,8 +269,7 @@ export default function TournamentBracket({ matches, teams }: TournamentBracketP
             </div>
           </div>
           <div className="flex flex-col">
-            <span className="text-white font-black text-sm uppercase tracking-widest leading-none">ELIMINATION PHASE</span>
-            <span className="text-zinc-500 font-bold text-[10px] uppercase tracking-[0.3em]">Official Tournament Bracket v2.0</span>
+            <span className="text-white font-black text-sm uppercase tracking-widest leading-none">SEMI FINALS</span>
           </div>
         </div>
 
