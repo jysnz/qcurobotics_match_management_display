@@ -8,6 +8,10 @@ interface Team {
   team_name: string;
 }
 
+interface Ranking {
+  team_id: number;
+}
+
 interface Match {
   id: string;
   match_number: number;
@@ -22,12 +26,18 @@ interface Match {
 interface TournamentBracketProps {
   matches: Match[];
   teams: Team[];
+  rankings: Ranking[];
 }
 
-export default function TournamentBracket({ matches, teams }: TournamentBracketProps) {
+export default function TournamentBracket({ matches, teams, rankings = [] }: TournamentBracketProps) {
   const getTeam = (id: number | null) => {
     if (id === null) return null;
     return teams.find(t => t.id === id);
+  };
+
+  const getRank = (teamId: number) => {
+    const index = rankings.findIndex(r => r.team_id === teamId);
+    return index !== -1 ? index + 1 : '-';
   };
 
   const getWinnerId = (match: Match | undefined) => {
@@ -65,7 +75,7 @@ export default function TournamentBracket({ matches, teams }: TournamentBracketP
     let displayRed = redTeam?.team_name || placeholderRed;
     let displayBlue = blueTeam?.team_name || placeholderBlue;
     
-    if (title === 'GRAND FINALS' && !match) {
+    if (title === 'Grand Finals' && !match) {
         if (winnerSF1) displayRed = getTeam(winnerSF1)?.team_name || 'Winner SF1';
         if (winnerSF2) displayBlue = getTeam(winnerSF2)?.team_name || 'Winner SF2';
     }
@@ -78,214 +88,206 @@ export default function TournamentBracket({ matches, teams }: TournamentBracketP
     const isNextMatch = match?.id === nextMatchId;
 
     return (
-      <div className={`flex flex-col ${isLarge ? 'w-[500px]' : 'w-[400px]'} group relative`}>
+      <div className={`flex flex-col ${isLarge ? 'w-[520px]' : 'w-[420px]'} group relative`}>
         {/* Match Header */}
-        <div className="flex items-center justify-between mb-3 px-2">
-          <div className="flex items-center gap-2">
-            <span className={`font-black text-xs uppercase tracking-[0.4em] ${isNextMatch ? 'text-amber-500' : 'text-zinc-500'}`}>
+        <div className="flex items-center justify-between mb-2 px-3">
+          <div className="flex items-center gap-3">
+            <div className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest ${
+              isNextMatch ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-500'
+            }`}>
               {title}
-            </span>
+            </div>
             {match?.status === 'Ongoing' ? (
-              <span className="flex h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+              <div className="flex items-center gap-1.5 px-2 py-0.5 bg-emerald-50 text-emerald-600 rounded text-[10px] font-black uppercase tracking-widest animate-pulse">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                Live
+              </div>
             ) : isNextMatch ? (
-              <span className="text-[10px] font-black text-amber-500 uppercase tracking-widest animate-pulse">Next Up</span>
+              <span className="text-[10px] font-black text-amber-600 uppercase tracking-widest animate-pulse">Up Next</span>
             ) : null}
           </div>
           {match?.status === 'Completed' && (
-            <span className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest">Official Result</span>
+            <div className="flex items-center gap-1 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+              <Trophy className="w-3 h-3" />
+              Final Result
+            </div>
           )}
         </div>
 
         {/* Card Body */}
-        <div className={`relative bg-zinc-950 border-2 transition-all duration-500 rounded-2xl overflow-hidden shadow-2xl backdrop-blur-xl ${
-          isNextMatch ? 'border-amber-500 ring-4 ring-amber-500/20 z-20 scale-[1.02]' :
-          isLarge ? 'border-amber-500/30' : 'border-white/5'
-        } ${match?.status === 'Ongoing' ? 'ring-2 ring-green-500/20 border-green-500/30' : ''}`}>
+        <div className={`relative bg-white border-2 transition-all duration-500 rounded-2xl overflow-hidden shadow-[0_15px_40px_rgba(0,0,0,0.04)] ${
+          isNextMatch ? 'border-amber-500 ring-8 ring-amber-500/5 z-20 scale-[1.02]' :
+          isLarge ? 'border-amber-200' : 'border-slate-100'
+        } ${match?.status === 'Ongoing' ? 'ring-4 ring-emerald-500/5 border-emerald-400/50' : ''}`}>
           
           {/* Winner Glow Layer */}
           <div className={`absolute inset-0 transition-opacity duration-1000 pointer-events-none ${
-            isRedWinner ? 'bg-gradient-to-r from-red-600/10 to-transparent opacity-100' : 
-            isBlueWinner ? 'bg-gradient-to-r from-blue-600/10 to-transparent opacity-100' : 'opacity-0'
+            isRedWinner ? 'bg-gradient-to-r from-red-50/50 to-transparent' : 
+            isBlueWinner ? 'bg-gradient-to-r from-blue-50/50 to-transparent' : 'opacity-0'
           }`} />
 
           {/* Red Side */}
-          <div className={`flex items-center justify-between py-5 px-6 border-b border-white/5 transition-colors relative ${isRedWinner ? 'z-10' : ''}`}>
+          <div className={`flex items-center justify-between py-4 px-5 border-b border-slate-50 transition-colors relative ${isRedWinner ? 'z-10' : ''}`}>
             <div className="flex items-center gap-4 flex-1 min-w-0">
-              <div className={`w-1.5 h-8 rounded-full transition-shadow duration-500 ${
-                isRedWinner ? 'bg-red-500 shadow-[0_0_15px_rgba(239,68,68,0.6)]' : 'bg-red-900/50'
+              <div className={`w-1.5 h-12 rounded-full transition-shadow duration-500 ${
+                isRedWinner ? 'bg-red-600 shadow-[0_0_15px_rgba(220,38,38,0.2)]' : 'bg-slate-200'
               }`} />
               <div className="flex flex-col min-w-0">
-                <span className={`text-2xl font-black uppercase tracking-tight truncate transition-colors duration-500 ${
-                  isRedWinner ? 'text-white' : 
-                  isBlueWinner ? 'text-zinc-600 opacity-50' : 
-                  (match?.status === 'Pending' && !isNextMatch) ? 'text-zinc-600' : 'text-zinc-300'
-                }`}>
-                  {displayRed}
-                </span>
-                {isRedWinner && <span className="text-[10px] font-bold text-red-400 uppercase tracking-[0.2em] -mt-1">Winner Advancing</span>}
+                <div className="flex items-center gap-2">
+                  {redTeam && (
+                    <span className={`text-[10px] font-black px-1.5 py-0.5 rounded ${isRedWinner ? 'bg-red-100 text-red-700' : 'bg-slate-100 text-slate-500'}`}>
+                      {getRank(redTeam.id)}
+                    </span>
+                  )}
+                  <span className={`text-xl font-bold uppercase tracking-tight truncate transition-colors duration-500 ${
+                    isRedWinner ? 'text-slate-900' : 
+                    isBlueWinner ? 'text-slate-300' : 
+                    (match?.status === 'Pending' && !isNextMatch) ? 'text-slate-300' : 'text-slate-700'
+                  }`}>
+                    {displayRed}
+                  </span>
+                </div>
+                {isRedWinner && <span className="text-[10px] font-bold text-red-500 uppercase tracking-[0.1em] mt-0.5 ml-0.5">Winner Advancing</span>}
               </div>
             </div>
-            <div className={`text-4xl font-black tabular-nums tracking-tighter ml-4 transition-colors duration-500 ${
-              isRedWinner ? 'text-red-500' : 
-              isBlueWinner ? 'text-zinc-800' : 
-              redScore !== null ? 'text-white' : 'text-zinc-800'
+            
+            <div className={`w-16 h-12 flex items-center justify-center rounded-xl transition-all duration-500 ${
+              isRedWinner ? 'bg-red-600 text-white shadow-lg shadow-red-200' : 
+              redScore !== null ? 'bg-slate-900 text-white' : 'bg-slate-50 text-slate-200'
             }`}>
-              {redScore ?? '--'}
+              <span className="text-3xl font-black tabular-nums tracking-tighter">
+                {redScore ?? '--'}
+              </span>
             </div>
           </div>
 
           {/* Blue Side */}
-          <div className={`flex items-center justify-between py-5 px-6 transition-colors relative ${isBlueWinner ? 'z-10' : ''}`}>
+          <div className={`flex items-center justify-between py-4 px-5 transition-colors relative ${isBlueWinner ? 'z-10' : ''}`}>
             <div className="flex items-center gap-4 flex-1 min-w-0">
-              <div className={`w-1.5 h-8 rounded-full transition-shadow duration-500 ${
-                isBlueWinner ? 'bg-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.6)]' : 'bg-blue-900/50'
+              <div className={`w-1.5 h-12 rounded-full transition-shadow duration-500 ${
+                isBlueWinner ? 'bg-blue-600 shadow-[0_0_15px_rgba(37,99,235,0.2)]' : 'bg-slate-200'
               }`} />
               <div className="flex flex-col min-w-0">
-                <span className={`text-2xl font-black uppercase tracking-tight truncate transition-colors duration-500 ${
-                  isBlueWinner ? 'text-white' : 
-                  isRedWinner ? 'text-zinc-600 opacity-50' : 
-                  (match?.status === 'Pending' && !isNextMatch) ? 'text-zinc-600' : 'text-zinc-300'
-                }`}>
-                  {displayBlue}
-                </span>
-                {isBlueWinner && <span className="text-[10px] font-bold text-blue-400 uppercase tracking-[0.2em] -mt-1">Winner Advancing</span>}
+                <div className="flex items-center gap-2">
+                  {blueTeam && (
+                    <span className={`text-[10px] font-black px-1.5 py-0.5 rounded ${isBlueWinner ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-500'}`}>
+                      {getRank(blueTeam.id)}
+                    </span>
+                  )}
+                  <span className={`text-xl font-bold uppercase tracking-tight truncate transition-colors duration-500 ${
+                    isBlueWinner ? 'text-slate-900' : 
+                    isRedWinner ? 'text-slate-300' : 
+                    (match?.status === 'Pending' && !isNextMatch) ? 'text-slate-300' : 'text-slate-700'
+                  }`}>
+                    {displayBlue}
+                  </span>
+                </div>
+                {isBlueWinner && <span className="text-[10px] font-bold text-blue-500 uppercase tracking-[0.1em] mt-0.5 ml-0.5">Winner Advancing</span>}
               </div>
             </div>
-            <div className={`text-4xl font-black tabular-nums tracking-tighter ml-4 transition-colors duration-500 ${
-              isBlueWinner ? 'text-blue-500' : 
-              isRedWinner ? 'text-zinc-800' : 
-              blueScore !== null ? 'text-white' : 'text-zinc-800'
+
+            <div className={`w-16 h-12 flex items-center justify-center rounded-xl transition-all duration-500 ${
+              isBlueWinner ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' : 
+              blueScore !== null ? 'bg-slate-900 text-white' : 'bg-slate-50 text-slate-200'
             }`}>
-              {blueScore ?? '--'}
+              <span className="text-3xl font-black tabular-nums tracking-tighter">
+                {blueScore ?? '--'}
+              </span>
             </div>
           </div>
         </div>
-
-        {/* Connector Dots */}
-        {!isLarge && (
-          <div className="absolute top-1/2 -right-12 w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-            <ArrowRight className="w-4 h-4 text-zinc-600" />
-          </div>
-        )}
       </div>
     );
   };
 
   return (
-    <div className="w-full h-full flex flex-col p-16 bg-[#050505] relative overflow-hidden">
+    <div className="w-full h-full flex flex-col p-16 bg-[#F8FAFC] relative overflow-hidden">
       
       {/* Background Decorative Grid */}
-      <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[url('https://grainy-gradients.vercel.app/noise.svg')] blend-overlay" />
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:64px_64px]" />
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#e2e8f0_1.5px,transparent_1px),linear-gradient(to_bottom,#e2e8f0_1.5px,transparent_1px)] bg-[size:100px_100px] opacity-30" />
 
       <div className="flex-1 flex items-center justify-center relative">
         
         <div className="flex items-center gap-0 relative">
           {/* Semi Finals Column */}
           <div className="flex flex-col gap-32 z-10">
-            {renderMatchCard(sf1, 'SF 1: UPPER BRACKET')}
-            {renderMatchCard(sf2, 'SF 2: LOWER BRACKET')}
+            {renderMatchCard(sf1, 'Semi-Final 1')}
+            {renderMatchCard(sf2, 'Semi-Final 2')}
           </div>
 
           {/* Connections SVG Layer */}
           <div className="w-32 h-[600px] relative">
             <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 128 600" preserveAspectRatio="none">
-              <defs>
-                <linearGradient id="lineGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" stopColor="rgba(255,255,255,0.02)" />
-                  <stop offset="100%" stopColor="rgba(255,255,255,0.15)" />
-                </linearGradient>
-                <filter id="glow">
-                  <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
-                  <feMerge>
-                    <feMergeNode in="coloredBlur"/>
-                    <feMergeNode in="SourceGraphic"/>
-                  </feMerge>
-                </filter>
-              </defs>
-              
               {/* Connector Paths - Dynamic alignment logic */}
-              {/* Y coordinates: 
-                  Gap SF1: 145, Red SF1: 110, Blue SF1: 180
-                  Gap SF2: 455, Red SF2: 420, Blue SF2: 490
-                  Finals Red Port: 250, Finals Blue Port: 350
-              */}
               <path 
-                d={`M 0 ${isRedWinnerSF1 ? '110' : isBlueWinnerSF1 ? '180' : '145'} L 64 ${isRedWinnerSF1 ? '110' : isBlueWinnerSF1 ? '180' : '145'} L 64 250 L 128 250`} 
+                d={`M 0 ${isRedWinnerSF1 ? '115' : isBlueWinnerSF1 ? '185' : '150'} L 64 ${isRedWinnerSF1 ? '115' : isBlueWinnerSF1 ? '185' : '150'} L 64 250 L 128 250`} 
                 fill="none" 
-                stroke="url(#lineGrad)" 
-                strokeWidth="2"
-                filter={winnerSF1 ? "url(#glow)" : ""}
+                stroke={winnerSF1 ? "#475569" : "#e2e8f0"} 
+                strokeWidth={winnerSF1 ? "3" : "2"}
                 className="transition-all duration-1000"
-                style={{ stroke: winnerSF1 ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.1)' }}
               />
               <path 
-                d={`M 0 ${isRedWinnerSF2 ? '420' : isBlueWinnerSF2 ? '490' : '455'} L 64 ${isRedWinnerSF2 ? '420' : isBlueWinnerSF2 ? '490' : '455'} L 64 350 L 128 350`} 
+                d={`M 0 ${isRedWinnerSF2 ? '415' : isBlueWinnerSF2 ? '485' : '450'} L 64 ${isRedWinnerSF2 ? '415' : isBlueWinnerSF2 ? '485' : '450'} L 64 350 L 128 350`} 
                 fill="none" 
-                stroke="url(#lineGrad)" 
-                strokeWidth="2"
-                filter={winnerSF2 ? "url(#glow)" : ""}
+                stroke={winnerSF2 ? "#475569" : "#e2e8f0"} 
+                strokeWidth={winnerSF2 ? "3" : "2"}
                 className="transition-all duration-1000"
-                style={{ stroke: winnerSF2 ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.1)' }}
               />
               
-              {/* Node points at junctions */}
-              <circle cx="64" cy="250" r="3" fill="rgba(255,255,255,0.2)" />
-              <circle cx="64" cy="350" r="3" fill="rgba(255,255,255,0.2)" />
+              <circle cx="64" cy="250" r="4" fill={winnerSF1 ? "#475569" : "#cbd5e1"} className="transition-all duration-1000" />
+              <circle cx="64" cy="350" r="4" fill={winnerSF2 ? "#475569" : "#cbd5e1"} className="transition-all duration-1000" />
             </svg>
           </div>
 
           {/* Finals Column */}
           <div className="z-10 flex flex-col items-center relative">
-            {/* Champion Display Area - Now Absolute to avoid shifting */}
-            <div className={`absolute -top-48 left-1/2 -translate-x-1/2 transition-all duration-1000 flex flex-col items-center w-full ${
+            {/* Champion Display Area */}
+            <div className={`absolute -top-56 left-1/2 -translate-x-1/2 transition-all duration-1000 flex flex-col items-center w-full ${
               championId ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-90 translate-y-10'
             }`}>
                <div className="relative">
-                 <Crown className="w-16 h-16 text-amber-500 drop-shadow-[0_0_15px_rgba(245,158,11,0.5)] mb-2" />
-                 <div className="absolute -inset-4 bg-amber-500/20 blur-2xl rounded-full" />
+                 <Crown className="w-20 h-20 text-amber-500 drop-shadow-[0_0_25px_rgba(245,158,11,0.5)] mb-2" />
+                 <div className="absolute -inset-6 bg-amber-400/20 blur-3xl rounded-full" />
                </div>
-               <span className="text-zinc-500 font-black text-xs uppercase tracking-[0.8em] mb-2">CHAMPION</span>
-               <span className="text-5xl font-black text-white uppercase tracking-tighter drop-shadow-2xl text-center whitespace-nowrap">
+               <span className="text-slate-400 font-black text-[11px] uppercase tracking-[1.2em] mb-3 ml-3">CHAMPION</span>
+               <span className="text-6xl font-black text-slate-900 uppercase tracking-tighter drop-shadow-sm text-center whitespace-nowrap">
                  {getTeam(championId)?.team_name}
                </span>
             </div>
 
-            {renderMatchCard(final, 'GRAND FINALS', winnerSF1 ? 'Winner SF1' : 'TBD', winnerSF2 ? 'Winner SF2' : 'TBD', true)}
+            {renderMatchCard(final, 'Grand Finals', winnerSF1 ? 'Winner SF1' : 'TBD', winnerSF2 ? 'Winner SF2' : 'TBD', true)}
           </div>
         </div>
 
       </div>
 
       {/* Footer Info Panel */}
-      <div className="mt-auto h-20 flex items-center justify-between border-t border-white/5 px-4">
-        <div className="flex items-center gap-6">
-          <div className="flex -space-x-2">
-            <div className="w-10 h-10 rounded-full bg-zinc-900 border-2 border-zinc-800 flex items-center justify-center">
-              <Trophy className="w-5 h-5 text-amber-500" />
+      <div className="mt-auto h-24 flex items-center justify-between border-t border-slate-100 px-8">
+        <div className="flex items-center gap-8">
+          <div className="flex items-center gap-5">
+            <div className="w-12 h-12 rounded-2xl bg-white border border-slate-200 flex items-center justify-center shadow-sm">
+              <Trophy className="w-6 h-6 text-amber-500" />
             </div>
-            <div className="w-10 h-10 rounded-full bg-zinc-950 border-2 border-zinc-800 flex items-center justify-center text-xs font-black text-zinc-500">
-              B
+            <div className="flex flex-col">
+              <span className="text-slate-900 font-black text-2xl uppercase tracking-widest leading-none italic">SEMI FINALS</span>
+              <span className="text-slate-400 font-bold text-xs uppercase tracking-[0.4em] mt-1.5">Official Tournament Broadcast</span>
             </div>
-          </div>
-          <div className="flex flex-col">
-            <span className="text-white font-black text-sm uppercase tracking-widest leading-none">SEMI FINALS</span>
           </div>
         </div>
 
-        <div className="flex gap-12">
-          <div className="flex items-center gap-3 group">
-            <div className="w-3 h-3 bg-red-600 rounded-full shadow-[0_0_10px_rgba(220,38,38,0.5)]" />
+        <div className="flex gap-20">
+          <div className="flex items-center gap-5 group">
+            <div className="w-2 h-8 bg-red-600 rounded-full shadow-[0_0_10px_rgba(220,38,38,0.25)]" />
             <div className="flex flex-col">
-              <span className="text-xs font-black text-white uppercase tracking-wider leading-none">RED</span>
-              <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest">Alliance</span>
+              <span className="text-sm font-black text-slate-800 uppercase tracking-widest leading-none">RED</span>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Alliance</span>
             </div>
           </div>
-          <div className="flex items-center gap-3 group">
-            <div className="w-3 h-3 bg-blue-600 rounded-full shadow-[0_0_10px_rgba(37,99,235,0.5)]" />
+          <div className="flex items-center gap-5 group">
+            <div className="w-2 h-8 bg-blue-600 rounded-full shadow-[0_0_10px_rgba(37,99,235,0.25)]" />
             <div className="flex flex-col">
-              <span className="text-xs font-black text-white uppercase tracking-wider leading-none">BLUE</span>
-              <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest">Alliance</span>
+              <span className="text-sm font-black text-slate-800 uppercase tracking-widest leading-none">BLUE</span>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Alliance</span>
             </div>
           </div>
         </div>

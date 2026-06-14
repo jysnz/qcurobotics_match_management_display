@@ -235,14 +235,16 @@ export default function SpectatorPage() {
     let retryCount = 0;
     const maxRetries = 5;
     let mainChannel: any = null;
+    const retryTimerRef = { current: null as NodeJS.Timeout | null };
 
     const setupSubscription = () => {
       // Cleanup existing channel if any
       if (mainChannel) {
         supabase.removeChannel(mainChannel);
+        mainChannel = null;
       }
 
-      // Consolidate into a single channel for better stability and lower overhead
+      // Consolidate into a single channel
       mainChannel = supabase
         .channel(`tournament_display_${tournamentId}`)
         .on(
@@ -277,24 +279,29 @@ export default function SpectatorPage() {
           
           if (status === 'SUBSCRIBED') {
             console.log('[REALTIME] Connection established successfully');
-            retryCount = 0; // Reset retries on success
+            retryCount = 0; 
+            if (retryTimerRef.current) {
+              clearTimeout(retryTimerRef.current);
+              retryTimerRef.current = null;
+            }
           } 
           
-          if (status === 'CHANNEL_ERROR' || status === 'CLOSED' || status === 'TIMED_OUT') {
+          // Only retry on unexpected errors or timeouts, not on explicit CLOSURE unless it's an error
+          if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
             console.error(`[REALTIME_ERROR] Connection issue: ${status}. Attempting recovery...`);
             
-            if (retryCount < maxRetries) {
+            if (retryCount < maxRetries && !retryTimerRef.current) {
               retryCount++;
-              const delay = Math.min(1000 * Math.pow(2, retryCount), 30000); // Exponential backoff
+              const delay = Math.min(1000 * Math.pow(2, retryCount), 30000); 
               console.log(`[REALTIME] Retrying connection in ${delay}ms (Attempt ${retryCount}/${maxRetries})`);
               
-              setTimeout(() => {
-                // Refetch all data to ensure we didn't miss anything during downtime
+              retryTimerRef.current = setTimeout(() => {
+                retryTimerRef.current = null;
                 fetchInitialData();
                 setupSubscription();
               }, delay);
-            } else {
-              console.error('[REALTIME_FATAL] Maximum reconnection attempts reached. Please refresh the page.');
+            } else if (retryCount >= maxRetries) {
+              console.error('[REALTIME_FATAL] Maximum reconnection attempts reached.');
             }
           }
         });
@@ -302,7 +309,7 @@ export default function SpectatorPage() {
 
     setupSubscription();
 
-    // Fallback periodic refresh (every 5 minutes) to ensure data stays fresh even if Realtime fails silently
+    // Fallback periodic refresh
     const heartbeatInterval = setInterval(() => {
       console.log('[REALTIME] Heartbeat: Performing periodic data refresh');
       fetchRankings();
@@ -311,6 +318,9 @@ export default function SpectatorPage() {
 
     return () => {
       console.log('[REALTIME] Cleaning up robust subscriptions');
+      if (retryTimerRef.current) {
+        clearTimeout(retryTimerRef.current);
+      }
       if (mainChannel) {
         supabase.removeChannel(mainChannel);
       }
@@ -423,7 +433,7 @@ export default function SpectatorPage() {
           <div className="w-[1320px] h-full flex flex-col relative shrink-0">
             <div className="flex-1 overflow-hidden relative z-10">
               {isEliminationPhase ? (
-                <TournamentBracket matches={matches} teams={teams} />
+                <TournamentBracket matches={matches} teams={teams} rankings={rankings} />
               ) : (
                 <RankingsTable rankings={rankings} />
               )}
